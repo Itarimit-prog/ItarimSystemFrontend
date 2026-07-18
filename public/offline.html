@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#3b82f6">
+  <title>Itarim System - Офлайн</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #1e293b;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .features {
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-right: 15px;
+    }
+
+    .feature-text {
+      color: #475569;
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .icon {
+        font-size: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>Вы офлайн</h1>
+    <p>
+      Похоже, у вас нет подключения к интернету. 
+      Проверьте соединение и попробуйте снова.
+    </p>
+    <button class="button" onclick="window.location.reload()">
+      🔄 Попробовать снова
+    </button>
+
+    <div class="features">
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">
+        Когда вы подключитесь, вы сможете:
+      </p>
+      <div class="feature">
+        <span class="feature-icon">✅</span>
+        <span class="feature-text">Управлять задачами и планировать день</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📊</span>
+        <span class="feature-text">Работать с Kanban доской</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🎯</span>
+        <span class="feature-text">Отслеживать привычки</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">💪</span>
+        <span class="feature-text">Логировать тренировки</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">💰</span>
+        <span class="feature-text">Вести учет финансов</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Автоматическая перезагрузка при восстановлении соединения
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

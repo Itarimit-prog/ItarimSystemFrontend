@@ -1,0 +1,7 @@
+# Tauri
+target/
+**/*.rs.lock
+
+# Icons (сгенерированные)
+icons/*
+!icons/README.md
