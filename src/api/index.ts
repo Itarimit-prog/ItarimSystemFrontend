@@ -6,7 +6,8 @@ import type { Transaction, Debt, Balance } from '@/types/finances'
 
 // Определение базового URL API
 // Всегда используем Railway backend
-const RAILWAY_API_URL = 'https://web-production-c2708.up.railway.app'
+const RAILWAY_API_URL = 'https://web-production-c01c.up.railway.app'
+
 
 const getApiBaseURL = () => {
   // Проверка на Tauri окружение
