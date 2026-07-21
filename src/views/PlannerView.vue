@@ -284,11 +284,11 @@ async function deleteTemplate(id: string) { await store.deleteTemplate(id) }
 }
 .fire { font-size: 15px; }
 .deadlines-title {
-  font-size: 12px; font-weight: 600; color: #B45309;
+  font-size: 12px; font-weight: 600; color: var(--tag-amber-text);
   text-transform: uppercase; letter-spacing: 0.05em; flex: 1;
 }
 .deadlines-count {
-  font-size: 11px; background: #FDE68A; color: #92400E;
+  font-size: 11px; background: var(--tag-amber-bg); color: var(--tag-amber-text);
   padding: 1px 7px; border-radius: 980px; font-weight: 500;
 }
 
@@ -309,9 +309,9 @@ async function deleteTemplate(id: string) { await store.deleteTemplate(id) }
   border-radius: 980px; white-space: nowrap; flex-shrink: 0;
 }
 .deadline-date.overdue { background: var(--danger-light); color: var(--danger); }
-.deadline-date.today   { background: #FDE68A; color: #92400E; }
-.deadline-date.tomorrow{ background: #FEF0D4; color: #B45309; }
-.deadline-date.soon    { background: var(--accent-light); color: #2B6CB0; }
+.deadline-date.today   { background: var(--tag-amber-bg); color: var(--tag-amber-text); }
+.deadline-date.tomorrow{ background: var(--tag-amber-bg); color: var(--tag-amber-text); }
+.deadline-date.soon    { background: var(--accent-light); color: var(--accent); }
 
 .divider { border: none; border-top: 0.5px solid var(--border); margin: 14px 0; flex-shrink: 0; }
 .section-label {

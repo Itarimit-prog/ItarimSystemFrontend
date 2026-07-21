@@ -65,6 +65,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { systemApi } from '@/api'
 
 const settings = useSettingsStore()
 
@@ -74,7 +75,9 @@ const isResetting = ref(false)
 async function handleReset() {
   isResetting.value = true
   try {
-    // Очищаем всё локальное хранилище и перезагружаем страницу
+    // Сначала реально удаляем все данные на сервере — иначе диалог
+    // обещает безвозвратное удаление, а на деле ничего не стирает
+    await systemApi.resetAll()
     localStorage.clear()
     showResetConfirm.value = false
     // Небольшая задержка чтобы пользователь увидел закрытие модала

@@ -23,6 +23,10 @@ const api = axios.create({
   headers: { 'X-API-Key': import.meta.env.VITE_API_KEY ?? '' },
 })
 
+export const systemApi = {
+  resetAll: () => api.post('/reset-all').then(r => r.data),
+}
+
 export default api
 
 export const tasksApi = {

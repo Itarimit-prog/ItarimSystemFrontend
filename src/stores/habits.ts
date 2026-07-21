@@ -97,7 +97,20 @@ export const useHabitsStore = defineStore('habits', () => {
 
   // ── Чеки (optimistic) ──
 
+  const pendingToggles = new Set<string>()
+
   async function toggleCheck(habitId: string, checkIndex = 0) {
+    const toggleKey = `${habitId}:${checkIndex}`
+    if (pendingToggles.has(toggleKey)) return // защита от двойного клика — гонка запросов
+    pendingToggles.add(toggleKey)
+    try {
+      await toggleCheckInner(habitId, checkIndex)
+    } finally {
+      pendingToggles.delete(toggleKey)
+    }
+  }
+
+  async function toggleCheckInner(habitId: string, checkIndex: number) {
     const existing = (checks.value[habitId] || []).find(c => c.check_index === checkIndex)
 
     if (existing) {

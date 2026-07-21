@@ -91,7 +91,9 @@ const recordDisplay = computed(() =>
 )
 
 function formatDate(iso: string): string {
-  const d = new Date(iso)
+  // Бэкенд хранит наивный UTC-timestamp — парсим так же, как elapsedSeconds,
+  // иначе дата "с..." расходится с таймером на величину часового пояса
+  const d = new Date(iso + 'Z')
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) +
     ', ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
@@ -146,7 +148,7 @@ async function confirmRelapse() {
 
 .record {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; color: #3B6D11; background: #EAF3DE;
+  font-size: 11px; color: var(--success); background: var(--success-light);
   padding: 3px 9px; border-radius: 980px;
 }
 

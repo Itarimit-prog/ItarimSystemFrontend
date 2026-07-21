@@ -19,13 +19,20 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
 const minutes = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))
 
-const hour = computed(() => props.modelValue?.split(':')[0] ?? '09')
-const minute = computed(() => {
-  const m = props.modelValue?.split(':')[1] ?? '00'
-  // Округляем до ближайших 5 минут, если значение пришло не кратным
-  const rounded = Math.round(Number(m) / 5) * 5
-  return String(rounded % 60).padStart(2, '0')
+// Округляем до ближайших 5 минут, если значение пришло не кратным (напр. старые данные),
+// с переносом часа при округлении 58→60 — иначе время молча съезжает на ~5 минут назад
+const rounded = computed(() => {
+  const [h, m] = (props.modelValue ?? '09:00').split(':').map(Number)
+  const roundedMinutes = Math.round((h * 60 + (m || 0)) / 5) * 5
+  const wrappedTotal = ((roundedMinutes % 1440) + 1440) % 1440
+  return {
+    hour: String(Math.floor(wrappedTotal / 60)).padStart(2, '0'),
+    minute: String(wrappedTotal % 60).padStart(2, '0'),
+  }
 })
+
+const hour = computed(() => rounded.value.hour)
+const minute = computed(() => rounded.value.minute)
 
 function onHourChange(e: Event) {
   const h = (e.target as HTMLSelectElement).value

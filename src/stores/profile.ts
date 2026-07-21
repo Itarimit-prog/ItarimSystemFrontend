@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { profileApi } from '@/api/profile'
 import { useXpToastStore } from '@/stores/xpToast'
+import { STAT_LABELS } from '@/types/profile'
 import type { PlayerProfile, Achievement, AchievementUnlockEvent } from '@/types/profile'
 
 export const useProfileStore = defineStore('profile', () => {
@@ -35,7 +36,7 @@ export const useProfileStore = defineStore('profile', () => {
           xpToast.show({
             xp: ev.xp_gained,
             statKey: ev.stat_gained ?? undefined,
-            statLabel: ev.stat_gained ?? undefined,
+            statLabel: ev.stat_gained ? STAT_LABELS[ev.stat_gained] : undefined,
           })
         }
         // Обновляем профиль и список достижений (без loadProfile, чтобы не мигать loading)

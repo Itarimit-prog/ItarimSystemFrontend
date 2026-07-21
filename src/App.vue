@@ -154,6 +154,15 @@ onMounted(async () => {
   --warning: #FFB347;
   --calendar-days: #2B6CB0;
   --accent-gradient-end: #4A9DF8;
+
+  /* Категорийные теги (задачи/финансы) — светлая тема */
+  --tag-amber-bg: #FEF0D4;
+  --tag-amber-text: #9A6200;
+  --tag-gray-bg: #F5F5F4;
+  --tag-gray-text: #4A4945;
+  --tag-emerald-bg: #EDFAF4;
+  --tag-emerald-text: #0D7050;
+  --tag-purple-bg: #F0F0FF;
 }
 
 .dark {
@@ -177,6 +186,15 @@ onMounted(async () => {
   --warning: #FFB347;
   --calendar-days: #7B4FB0;
   --accent-gradient-end: #9A85FF;
+
+  /* Категорийные теги (задачи/финансы) — тёмная тема */
+  --tag-amber-bg: #332510;
+  --tag-amber-text: #FFC670;
+  --tag-gray-bg: #23283A;
+  --tag-gray-text: #A8AFC4;
+  --tag-emerald-bg: #12271F;
+  --tag-emerald-text: #4ECCA3;
+  --tag-purple-bg: #241B3D;
 }
 
 html, body {

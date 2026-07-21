@@ -150,5 +150,5 @@ async function save(event: MouseEvent) {
   pointer-events: none;
 }
 .btn-secondary { background: var(--bg-primary); color: var(--text-secondary); }
-.btn-secondary:hover { background: var(--color-btn-secondary-hover) }
+.btn-secondary:hover { background: var(--accent-light); }
 </style>

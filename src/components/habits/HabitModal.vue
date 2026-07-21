@@ -179,7 +179,7 @@ async function deleteHabit() {
   border: 1px solid var(--border); background: var(--bg-primary);
   font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
 }
-.kind-btn.active { background: #EAF3DE; border-color: #C0DD97; color: #3B6D11; }
+.kind-btn.active { background: var(--success-light); border-color: var(--success-border); color: var(--success); }
 .kind-btn.bad.active { background: var(--danger-light); border-color: var(--danger-border); color: var(--danger); }
 .freq-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
 

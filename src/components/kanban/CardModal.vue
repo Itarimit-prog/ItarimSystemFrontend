@@ -61,6 +61,8 @@ async function save(event: MouseEvent) {
       deadline: form.deadline || null,
     })
     emit('saved')
+  } catch (e) {
+    console.error('Ошибка сохранения карточки:', e)
   } finally {
     isSaving.value = false
   }

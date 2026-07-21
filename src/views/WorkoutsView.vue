@@ -388,25 +388,6 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
 }
 .metric input:focus { border-color: var(--accent); }
 
-.sets-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.set-pill {
-  display: flex; align-items: center; gap: 4px; padding: 3px 9px;
-  border-radius: 980px; background: var(--accent-light); border: 0.5px solid var(--border);
-  font-size: 11px; color: #185FA5;
-}
-.set-best { background: #EAF3DE; border-color: #C0DD97; color: #3B6D11; }
-.add-set {
-  padding: 3px 9px; border-radius: 980px; border: 0.5px dashed var(--text-muted);
-  background: none; color: var(--text-muted); font-size: 11px; cursor: pointer;
-}
-.add-set:hover { background: var(--accent-light); color: var(--accent); border-style: solid; }
-
-.progress-mini { margin-top: 8px; display: flex; align-items: center; gap: 6px; }
-.prog-label { font-size: 10px; color: var(--text-muted); }
-.prog-bar { flex: 1; height: 3px; background: var(--accent-light); border-radius: 3px; overflow: hidden; }
-.prog-fill { height: 100%; background: var(--accent);border-radius: 3px; }
-.prog-val { font-size: 10px; color: var(--accent); font-weight: 500; }
-
 .add-ex-btn {
   display: flex; align-items: center; gap: 6px; width: 100%;
   padding: 10px 14px; border-radius: 12px; border: 0.5px dashed var(--text-muted);

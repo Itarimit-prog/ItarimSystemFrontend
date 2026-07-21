@@ -25,23 +25,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import { usePlannerStore } from '@/stores/planner'
 import { storeToRefs } from 'pinia'
 
 const store = usePlannerStore()
 const { selectedDate, datesWithTasks } = storeToRefs(store)
 
-const today = new Date()
 function formatDateLocal(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
-const todayStr = formatDateLocal(today)
-const viewYear = ref(today.getFullYear())
-const viewMonth = ref(today.getMonth())
+
+const todayStr = ref(formatDateLocal(new Date()))
+const viewYear = ref(new Date().getFullYear())
+const viewMonth = ref(new Date().getMonth())
+
+// Компонент живёт внутри <KeepAlive> — без этого "сегодня" замрёт
+// на дате открытия приложения, если сессия оставлена открытой через полночь
+onActivated(() => {
+  todayStr.value = formatDateLocal(new Date())
+})
 
 const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 

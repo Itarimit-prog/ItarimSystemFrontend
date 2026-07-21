@@ -33,22 +33,22 @@ export interface Balance {
 }
 
 export const CATEGORY_META: Record<TransactionCategory, { label: string; icon: string; bg: string }> = {
-  work:          { label: 'Работа',        icon: '💼', bg: '#EAF3DE' },
-  food:          { label: 'Еда',           icon: '🛒', bg: '#FFF0F0' },
-  housing:       { label: 'Жильё',         icon: '🏠', bg: '#EEF5FF' },
-  transport:     { label: 'Транспорт',     icon: '🚗', bg: '#FFF0F0' },
-  health:        { label: 'Здоровье',      icon: '💊', bg: '#FEF0D4' },
-  education:     { label: 'Образование',   icon: '🎓', bg: '#FEF0D4' },
-  entertainment: { label: 'Развлечения',   icon: '🎮', bg: '#F0F0FF' },
-  other:         { label: 'Другое',        icon: '📦', bg: '#F5F5F4' },
+  work:          { label: 'Работа',        icon: '💼', bg: 'var(--success-light)' },
+  food:          { label: 'Еда',           icon: '🛒', bg: 'var(--danger-light)' },
+  housing:       { label: 'Жильё',         icon: '🏠', bg: 'var(--accent-light)' },
+  transport:     { label: 'Транспорт',     icon: '🚗', bg: 'var(--danger-light)' },
+  health:        { label: 'Здоровье',      icon: '💊', bg: 'var(--tag-amber-bg)' },
+  education:     { label: 'Образование',   icon: '🎓', bg: 'var(--tag-amber-bg)' },
+  entertainment: { label: 'Развлечения',   icon: '🎮', bg: 'var(--tag-purple-bg)' },
+  other:         { label: 'Другое',        icon: '📦', bg: 'var(--tag-gray-bg)' },
 }
 
 export const TRANSACTION_TYPE_META: Record<TransactionType, { label: string; color: string; bg: string }> = {
-  income:  { label: 'Доход',   color: '#3B6D11', bg: '#EAF3DE' },
-  expense: { label: 'Расход',  color: '#E24B4A', bg: '#FCDCDC' },
+  income:  { label: 'Доход',   color: 'var(--success)', bg: 'var(--success-light)' },
+  expense: { label: 'Расход',  color: 'var(--danger)',  bg: 'var(--danger-light)' },
 }
 
 export const DEBT_STATUS_META: Record<DebtStatus, { label: string; color: string; bg: string }> = {
-  active: { label: 'Активен', color: '#9A6200', bg: '#FEF0D4' },
-  paid:   { label: 'Погашен', color: '#3B6D11', bg: '#EAF3DE' },
+  active: { label: 'Активен', color: 'var(--tag-amber-text)', bg: 'var(--tag-amber-bg)' },
+  paid:   { label: 'Погашен', color: 'var(--success)',        bg: 'var(--success-light)' },
 }
