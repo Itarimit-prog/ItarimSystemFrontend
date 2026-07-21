@@ -12,7 +12,7 @@
         <div v-if="log.exercises.length">
           <b>Упражнения:</b>
           <ul style="margin-top:6px; padding-left:16px">
-            <li v-for="exId in log.exercises" :key="exId" style="font-size:13px; color:#0A1E35">
+            <li v-for="exId in log.exercises" :key="exId" style="font-size:13px; color:var(--text-primary)">
               {{ exId }}
             </li>
           </ul>

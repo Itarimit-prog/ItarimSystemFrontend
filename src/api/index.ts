@@ -17,7 +17,10 @@ const getApiBaseURL = () => {
   return RAILWAY_API_URL
 }
 
-const api = axios.create({ baseURL: getApiBaseURL() })
+const api = axios.create({
+  baseURL: getApiBaseURL(),
+  headers: { 'X-API-Key': import.meta.env.VITE_API_KEY ?? '' },
+})
 
 export default api
 

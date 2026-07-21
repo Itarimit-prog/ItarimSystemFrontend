@@ -8,6 +8,7 @@ export interface Exercise {
   muscle_groups: string[]
   max_weight?: number
   max_reps?: number
+  sets?: number
 }
 
 export interface UserProfile {

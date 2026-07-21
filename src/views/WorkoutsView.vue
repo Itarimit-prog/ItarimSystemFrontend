@@ -25,6 +25,32 @@
               </button>
             </div>
           </div>
+          <div class="ex-metrics">
+            <label class="metric">
+              <span class="metric-lbl">Подходы</span>
+              <input
+                type="number" min="0" placeholder="—"
+                :value="e.sets ?? ''"
+                @change="onMetricChange(e, 'sets', $event)"
+              />
+            </label>
+            <label class="metric">
+              <span class="metric-lbl">Повторения</span>
+              <input
+                type="number" min="0" placeholder="—"
+                :value="e.max_reps ?? ''"
+                @change="onMetricChange(e, 'max_reps', $event)"
+              />
+            </label>
+            <label class="metric">
+              <span class="metric-lbl">Вес, кг</span>
+              <input
+                type="number" min="0" step="0.5" placeholder="—"
+                :value="e.max_weight ?? ''"
+                @change="onMetricChange(e, 'max_weight', $event)"
+              />
+            </label>
+          </div>
         </div>
         <button class="add-ex-btn" @click="addExercise">
           <IconPlus size="13" /> Добавить упражнение
@@ -211,6 +237,25 @@ function editExercise(e: Exercise) {
   showExerciseModal.value = true
 }
 
+async function onMetricChange(e: Exercise, field: 'sets' | 'max_reps' | 'max_weight', event: Event) {
+  const raw = (event.target as HTMLInputElement).value
+  const value = raw === '' ? undefined : Number(raw)
+  try {
+    await store.updateExercise(e.id, {
+      name: e.name,
+      description: e.description,
+      exercise_type: e.exercise_type,
+      muscle_groups: e.muscle_groups,
+      max_weight: e.max_weight,
+      max_reps: e.max_reps,
+      sets: e.sets,
+      [field]: value,
+    })
+  } catch (err) {
+    console.error('Ошибка сохранения показателя:', err)
+  }
+}
+
 function editProfile() {
   isSavingProfile.value = false
   showMetricsModal.value = true
@@ -331,6 +376,17 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
 }
 .ex-btn:hover { color: var(--accent); background: var(--accent-light); }
 .ex-btn.del:hover { color: var(--danger); background: var(--danger-light); }
+
+.ex-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.metric { display: flex; flex-direction: column; gap: 3px; }
+.metric-lbl { font-size: 10px; color: var(--text-muted); }
+.metric input {
+  width: 100%; padding: 5px 8px; border-radius: 8px;
+  border: 0.5px solid var(--border); background: var(--bg-primary);
+  font-size: 12px; color: var(--text-primary); outline: none;
+  box-sizing: border-box; transition: border-color 0.15s;
+}
+.metric input:focus { border-color: var(--accent); }
 
 .sets-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .set-pill {

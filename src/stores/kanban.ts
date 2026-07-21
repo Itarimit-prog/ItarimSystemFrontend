@@ -265,9 +265,12 @@ export const useKanbanStore = defineStore('kanban', () => {
     const cardIdx = fromList.findIndex(c => c.id === cardId)
     if (cardIdx === -1) return
 
+    const originalToList = cards.value[toColumnId] ?? []
     const card = { ...fromList[cardIdx] }
     const newFromList = fromList.filter(c => c.id !== cardId)
-    const toList = cards.value[toColumnId] ?? []
+    // Если колонка та же — базируемся на уже отфильтрованном списке,
+    // иначе исходный toList не содержит перетаскиваемую карточку и её не нужно вычищать
+    const toList = fromColumnId === toColumnId ? newFromList : originalToList
     const newToList = [...toList]
     newToList.splice(position, 0, card)
 
@@ -282,7 +285,9 @@ export const useKanbanStore = defineStore('kanban', () => {
       card.completed_at = null
     }
 
-    cards.value = { ...cards.value, [fromColumnId]: newFromList, [toColumnId]: newToList }
+    cards.value = fromColumnId === toColumnId
+      ? { ...cards.value, [toColumnId]: newToList }
+      : { ...cards.value, [fromColumnId]: newFromList, [toColumnId]: newToList }
 
     try {
       const updated = await cardsApi.move(cardId, toColumnId, position)
@@ -296,7 +301,9 @@ export const useKanbanStore = defineStore('kanban', () => {
     } catch (e) {
       console.error('Failed to move card:', e)
       // Rollback
-      cards.value = { ...cards.value, [fromColumnId]: fromList, [toColumnId]: toList }
+      cards.value = fromColumnId === toColumnId
+        ? { ...cards.value, [toColumnId]: fromList }
+        : { ...cards.value, [fromColumnId]: fromList, [toColumnId]: originalToList }
     }
   }
 

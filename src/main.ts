@@ -3,6 +3,12 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
+// Применяем сохранённую тему СРАЗУ, до монтирования приложения —
+// иначе страница всегда рендерится светлой до захода на "Настройки"
+if (localStorage.getItem('theme') === 'dark') {
+  document.documentElement.classList.add('dark')
+}
+
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)

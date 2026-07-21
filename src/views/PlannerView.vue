@@ -253,10 +253,10 @@ async function deleteTemplate(id: string) { await store.deleteTemplate(id) }
 .btn-primary:hover { background: var(--accent-hover); }
 .btn-ghost {
   padding: 7px 14px; border-radius: 980px;
-  border: 0.5px solid var(--text-muted); background: #E8F2FB;
+  border: 0.5px solid var(--text-muted); background: var(--accent-light);
   color: var(--accent); font-size: 13px; font-weight: 500; cursor: pointer;
 }
-.btn-ghost:hover { background: #D0E5F7; }
+.btn-ghost:hover { filter: brightness(0.94); }
 
 .stats-pills { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
 .pill {
@@ -325,7 +325,7 @@ async function deleteTemplate(id: string) { await store.deleteTemplate(id) }
   padding: 8px 10px; border-radius: 12px; margin-bottom: 3px;
   min-width: 0;
 }
-.tpl-item:hover { background: #E8F2FB; }
+.tpl-item:hover { background: var(--accent-light); }
 .tpl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 .tpl-name { 
   flex: 1; font-size: 13px; color: var(--text-primary); 
@@ -341,9 +341,9 @@ async function deleteTemplate(id: string) { await store.deleteTemplate(id) }
   white-space: nowrap;
 }
 .tpl-item:hover .tpl-apply-btn { opacity: 1; }
-.tpl-apply-btn:hover { background: #D0E5F7; }
+.tpl-apply-btn:hover { background: var(--accent-light); filter: brightness(0.94); }
 .tpl-del-btn {
-  font-size: 16px; color: #ccc; background: none;
+  font-size: 16px; color: var(--text-muted); background: none;
   border: none; cursor: pointer; opacity: 0; line-height: 1;
   flex-shrink: 0;
 }

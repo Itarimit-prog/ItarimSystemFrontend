@@ -28,15 +28,19 @@
         </div>
 
         <div class="form-divider">Дополнительные показатели</div>
-        
-        <div class="form-row">
+
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label>Подходы</label>
+            <input v-model.number="form.sets" type="number" min="0" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Повторения</label>
+            <input v-model.number="form.max_reps" type="number" min="0" class="form-input" />
+          </div>
           <div class="form-group">
             <label>Рекордный вес (кг)</label>
             <input v-model.number="form.max_weight" type="number" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label>Макс. повторений</label>
-            <input v-model.number="form.max_reps" type="number" min="0" class="form-input" />
           </div>
         </div>
       </div>
@@ -71,6 +75,7 @@ const form = ref({
   muscle_groups: [] as string[],
   max_weight: undefined as number | undefined,
   max_reps: undefined as number | undefined,
+  sets: undefined as number | undefined,
 })
 const muscleGroupsInput = ref('')
 
@@ -83,6 +88,7 @@ watch(() => props.exercise, (newVal) => {
       muscle_groups: newVal.muscle_groups || [],
       max_weight: newVal.max_weight,
       max_reps: newVal.max_reps,
+      sets: newVal.sets,
     }
     muscleGroupsInput.value = newVal.muscle_groups?.join(', ') || ''
   } else {
@@ -93,6 +99,7 @@ watch(() => props.exercise, (newVal) => {
       muscle_groups: [],
       max_weight: undefined,
       max_reps: undefined,
+      sets: undefined,
     }
     muscleGroupsInput.value = ''
   }
@@ -142,9 +149,10 @@ async function save(event: MouseEvent) {
   border-top: 0.5px solid var(--border);
 }
 
-.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .form-group label { font-size: 12px; color: var(--text-secondary); }
 .form-input, .form-textarea, .form-select {
+  width: 100%; box-sizing: border-box; min-width: 0;
   padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
   font-size: 14px; color: var(--text-primary); outline: none;
   background: var(--bg-card);
@@ -155,6 +163,7 @@ async function save(event: MouseEvent) {
 .form-textarea { min-height: 80px; resize: vertical; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
 .form-divider {
   font-size: 11px; font-weight: 500; color: var(--text-muted);
   text-transform: uppercase; margin-top: 8px; margin-bottom: -4px;
@@ -172,4 +181,27 @@ async function save(event: MouseEvent) {
 }
 .btn-secondary { background: var(--bg-primary); color: var(--text-secondary); }
 .btn-secondary:hover { background: var(--accent-light); }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .modal {
+    width: 94vw;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-body {
+    padding: 14px 16px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  .modal-header { padding: 14px 16px; }
+  .modal-footer { padding: 12px 16px; }
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+  .form-input, .form-textarea, .form-select {
+    font-size: 16px; /* предотвращает авто-zoom на iOS при фокусе */
+  }
+}
 </style>

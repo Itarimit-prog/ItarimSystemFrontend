@@ -102,8 +102,10 @@
             <div class="unlock-label">🎉 Новое достижение!</div>
             <div v-for="ev in newUnlocks" :key="ev.achievement.code" class="unlock-item">
               <span class="unlock-icon">{{ ev.achievement.icon }}</span>
-              <span class="unlock-title">{{ ev.achievement.title }}</span>
-              <span class="unlock-xp">+{{ ev.xp_gained }} XP</span>
+              <div class="unlock-text">
+                <div class="unlock-title">{{ ev.achievement.title }}</div>
+                <span class="unlock-xp">+{{ ev.xp_gained }} XP</span>
+              </div>
             </div>
             <div class="unlock-hint">Нажмите, чтобы закрыть</div>
           </div>
@@ -236,7 +238,7 @@ function dismissUnlocks() {
 .loading { color: var(--text-muted); font-size: 14px; padding: 40px 20px; }
 .loading-bar {
   text-align: center; color: var(--text-secondary); font-size: 12px;
-  padding: 8px; background: #E8F2FC; border-radius: 8px;
+  padding: 8px; background: var(--accent-light); border-radius: 8px;
   margin-bottom: 12px;
 }
 
@@ -274,7 +276,7 @@ function dismissUnlocks() {
 
 .xp-bar-wrap { margin-top: 2px; }
 .xp-bar {
-  height: 10px; background: #E8F2FC; border-radius: 6px;
+  height: 10px; background: var(--accent-light); border-radius: 6px;
   overflow: hidden;
 }
 .xp-fill {
@@ -315,7 +317,7 @@ function dismissUnlocks() {
 .stat-name { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; }
 .stat-level { font-size: 12px; font-weight: 700; }
 .stat-bar {
-  height: 7px; background: #E8F2FC; border-radius: 5px;
+  height: 7px; background: var(--accent-light); border-radius: 5px;
   overflow: hidden;
 }
 .stat-fill {
@@ -343,7 +345,7 @@ function dismissUnlocks() {
 .ach-reward {
   font-size: 10px; color: var(--accent); font-weight: 600;
   margin-top: 4px; display: inline-block;
-  background: #E8F2FC; padding: 2px 7px; border-radius: 6px;
+  background: var(--accent-light); padding: 2px 7px; border-radius: 6px;
 }
 
 .empty-ach {
@@ -371,12 +373,13 @@ function dismissUnlocks() {
   margin-bottom: 16px;
 }
 .unlock-item {
-  display: flex; align-items: center; gap: 10px;
-  justify-content: center; margin-bottom: 8px;
+  display: flex; align-items: flex-start; gap: 10px;
+  text-align: left; margin-bottom: 12px;
 }
-.unlock-icon { font-size: 28px; }
-.unlock-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-.unlock-xp { font-size: 12px; color: var(--success); font-weight: 600; }
+.unlock-icon { font-size: 28px; flex-shrink: 0; line-height: 1.3; }
+.unlock-text { flex: 1; min-width: 0; }
+.unlock-title { font-size: 14px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+.unlock-xp { font-size: 11px; color: var(--success); font-weight: 600; display: inline-block; margin-top: 3px; }
 .unlock-hint {
   font-size: 11px; color: var(--text-muted); margin-top: 14px;
 }

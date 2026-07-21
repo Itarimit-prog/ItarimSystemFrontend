@@ -29,11 +29,11 @@
         <div class="field-row">
           <div class="field">
             <label>Начало</label>
-            <input v-model="form.time_start" type="time" />
+            <TimeSelect v-model="form.time_start" />
           </div>
           <div class="field">
             <label>Конец</label>
-            <input v-model="form.time_end" type="time" />
+            <TimeSelect v-model="form.time_end" />
           </div>
         </div>
 
@@ -71,6 +71,7 @@ import { reactive, computed, ref } from 'vue'
 import type { Task, TaskType, TaskStatus } from '@/types'
 import { TASK_TYPE_META, STATUS_META } from '@/types'
 import { usePlannerStore } from '@/stores/planner'
+import TimeSelect from '@/components/shared/TimeSelect.vue'
 
 const props = defineProps<{ task?: Task | null; date: string }>()
 const emit = defineEmits<{ close: []; saved: []; saving: [boolean] }>()

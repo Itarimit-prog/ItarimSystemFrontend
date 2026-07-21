@@ -232,29 +232,48 @@ const expenseCategories = computed(() => {
 // Простой график — последние 7 / 30 дней
 const chartData = computed(() => {
   const days = chartTab.value === 'week' ? 7 : 30
-  const labels = chartTab.value === 'week'
-    ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-    : Array.from({ length: 30 }, (_, i) => String(i + 1))
+
+  // Бакет i соответствует дню (сегодня - (days-1-i)) — от самого старого к сегодняшнему
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const bucketDates = Array.from({ length: days }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() - (days - 1 - i))
+    return d
+  })
+
+  function toLocalDateStr(d: Date) {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  // Дата транзакции → индекс бакета (по календарной дате, а не по разнице в мс — без сдвигов от времени суток)
+  const dateToIndex = new Map(bucketDates.map((d, i) => [toLocalDateStr(d), i]))
 
   const buckets: { inc: number; exp: number }[] = Array.from({ length: days }, () => ({ inc: 0, exp: 0 }))
-  const now = new Date()
 
   for (const t of transactions.value) {
-    const d = new Date(t.date + 'T00:00')
-    const diff = Math.floor((now.getTime() - d.getTime()) / 86400000)
-    const idx = days - 1 - diff
-    if (idx >= 0 && idx < days) {
+    const idx = dateToIndex.get(t.date)
+    if (idx !== undefined) {
       if (t.transaction_type === 'income') buckets[idx].inc += t.amount
       else buckets[idx].exp += t.amount
     }
   }
 
   const maxVal = Math.max(...buckets.map(b => Math.max(b.inc, b.exp)), 1)
-  return buckets.map((b, i) => ({
-    label: chartTab.value === 'week' ? labels[i] : (i % 5 === 0 ? labels[i] : ''),
-    incH: Math.round((b.inc / maxVal) * 70),
-    expH: Math.round((b.exp / maxVal) * 70),
-  }))
+  return buckets.map((b, i) => {
+    const d = bucketDates[i]
+    const label = chartTab.value === 'week'
+      ? d.toLocaleDateString('ru-RU', { weekday: 'short' })
+      : (i % 5 === 0 ? String(d.getDate()) : '')
+    return {
+      label,
+      incH: Math.round((b.inc / maxVal) * 70),
+      expH: Math.round((b.exp / maxVal) * 70),
+    }
+  })
 })
 
 // ── Helpers ──
