@@ -67,7 +67,7 @@ const habitsStore = useHabitsStore()
 const { habits, stats } = storeToRefs(habitsStore)
 
 const plannerStore = usePlannerStore()
-const { sortedTasks } = storeToRefs(plannerStore)
+const { todayTasks: allTodayTasks } = storeToRefs(plannerStore)
 
 const workoutsStore = useWorkoutsStore()
 const { routines } = storeToRefs(workoutsStore)
@@ -77,8 +77,9 @@ function isChecked(habitId: string) { return habitsStore.isChecked(habitId) }
 function toggle(habitId: string) { habitsStore.toggleCheck(habitId) }
 const checkedGoodCount = computed(() => goodHabits.value.filter(h => isChecked(h.id)).length)
 
+// Именно СЕГОДНЯШНИЕ дела — не зависит от того, какой день сейчас открыт в планере
 const todayTasks = computed(() =>
-  sortedTasks.value.filter(t => ['work', 'study', 'workout'].includes(t.task_type))
+  allTodayTasks.value.filter(t => ['work', 'study', 'workout'].includes(t.task_type))
 )
 
 function routineName(routineId?: string | null) {

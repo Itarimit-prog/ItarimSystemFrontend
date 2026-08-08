@@ -37,6 +37,15 @@ export const usePlannerStore = defineStore('planner', () => {
     [...tasks.value].sort((a, b) => a.time_start.localeCompare(b.time_start))
   )
 
+  // Задачи за РЕАЛЬНОЕ сегодня — не зависит от того, какой день пользователь
+  // сейчас листает в планере (selectedDate меняется при навигации по календарю,
+  // а виджеты вроде дашборда должны всегда показывать именно сегодняшний день)
+  const todayTasks = computed(() => {
+    const todayStr = formatDateLocal(new Date())
+    const list = tasksCache.value[todayStr] ?? []
+    return [...list].sort((a, b) => a.time_start.localeCompare(b.time_start))
+  })
+
   const stats = computed(() => ({
     done: tasks.value.filter(t => t.status === 'done').length,
     pending: tasks.value.filter(t => t.status === 'pending').length,
@@ -291,7 +300,7 @@ export const usePlannerStore = defineStore('planner', () => {
 
   return {
     tasks, tasksCache, templates, selectedDate, datesWithTasks, loading,
-    sortedTasks, stats,
+    sortedTasks, todayTasks, stats,
     loadTasks, loadWeekTasks, loadDatesWithTasks, loadTemplates, selectDate,
     createTask, updateTask, updateTaskStatus, deleteTask,
     saveAsTemplate, applyTemplate, deleteTemplate,

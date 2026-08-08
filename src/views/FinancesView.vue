@@ -248,9 +248,19 @@ const chartTab = ref<'week' | 'month'>('week')
 
 // ── Computed ──
 
+// Список транзакций и категории расходов — только за текущий месяц,
+// как и карточки "Доходы"/"Расходы". Прошлые месяцы уходят в архив ниже.
+const currentMonthKey = (() => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+})()
+const currentMonthTransactions = computed(() =>
+  transactions.value.filter(t => t.date.startsWith(currentMonthKey))
+)
+
 const filteredTransactions = computed(() => {
-  if (activeFilter.value === 'all') return transactions.value
-  return transactions.value.filter(t => t.transaction_type === activeFilter.value)
+  if (activeFilter.value === 'all') return currentMonthTransactions.value
+  return currentMonthTransactions.value.filter(t => t.transaction_type === activeFilter.value)
 })
 
 const filteredDebts = computed(() =>
@@ -259,7 +269,7 @@ const filteredDebts = computed(() =>
 
 const expenseCategories = computed(() => {
   const map: Record<string, { total: number }> = {}
-  for (const t of transactions.value) {
+  for (const t of currentMonthTransactions.value) {
     if (t.transaction_type === 'expense') {
       if (!map[t.category]) map[t.category] = { total: 0 }
       map[t.category].total += t.amount

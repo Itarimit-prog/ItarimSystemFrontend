@@ -38,7 +38,7 @@
           <div class="routine-detail-head">
             <span class="routine-detail-title">{{ activeRoutine.icon || '🏋️' }} {{ activeRoutine.name }}</span>
             <div class="routine-actions">
-              <button class="rd-btn" @click="renameActiveRoutine">Переим.</button>
+              <button class="rd-btn" @click="openRenameRoutine">Переим.</button>
               <button class="rd-btn danger" @click="showDeleteConfirm('routine', activeRoutine.id)">Удалить</button>
             </div>
           </div>
@@ -176,6 +176,20 @@
       </div>
     </Teleport>
 
+    <!-- Модал: переименование тренировки -->
+    <Teleport to="body" v-if="showRenameRoutineModal">
+      <div class="overlay" @click.self="showRenameRoutineModal = false">
+        <div class="mini-modal">
+          <h3>Переименовать тренировку</h3>
+          <input v-model="renameRoutineName" placeholder="Название" @keyup.enter="submitRenameRoutine" />
+          <div class="mini-footer">
+            <button class="btn-cancel" @click="showRenameRoutineModal = false">Отмена</button>
+            <button class="btn-save" @click="submitRenameRoutine" :disabled="!renameRoutineName.trim() || isSavingRoutine">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Модал: подтверждение удаления -->
     <Teleport to="body" v-if="showDeleteConfirmModal">
       <div class="overlay" @click.self="showDeleteConfirmModal = false">
@@ -212,6 +226,8 @@ const showMetricsModal = ref(false)
 const showDeleteConfirmModal = ref(false)
 const showNewRoutineModal = ref(false)
 const newRoutineName = ref('')
+const showRenameRoutineModal = ref(false)
+const renameRoutineName = ref('')
 const isSavingRoutine = ref(false)
 const editingRoutineExercise = ref<RoutineExercise | null>(null)
 const deleteTarget = ref<{ type: 'workout' | 'routine' | 'routine-exercise'; id: string } | null>(null)
@@ -303,14 +319,22 @@ async function submitNewRoutine() {
   }
 }
 
-async function renameActiveRoutine() {
+function openRenameRoutine() {
   if (!activeRoutine.value) return
-  const name = prompt('Новое название тренировки', activeRoutine.value.name)
-  if (!name || !name.trim()) return
+  renameRoutineName.value = activeRoutine.value.name
+  showRenameRoutineModal.value = true
+}
+
+async function submitRenameRoutine() {
+  if (!activeRoutine.value || !renameRoutineName.value.trim() || isSavingRoutine.value) return
+  isSavingRoutine.value = true
   try {
-    await store.renameRoutine(activeRoutine.value.id, name.trim())
+    await store.renameRoutine(activeRoutine.value.id, renameRoutineName.value.trim())
+    showRenameRoutineModal.value = false
   } catch (err) {
     console.error('Ошибка переименования тренировки:', err)
+  } finally {
+    isSavingRoutine.value = false
   }
 }
 
@@ -335,8 +359,8 @@ async function stopWorkout() {
         routine_id: activeRoutineId.value,
       })
     } catch (err: any) {
+      // alert() не работает в standalone-режиме iOS PWA — просто логируем
       console.error('Ошибка сохранения тренировки:', err)
-      alert('Ошибка сохранения тренировки: ' + (err?.message || err))
     }
   }
   timerSeconds.value = 0

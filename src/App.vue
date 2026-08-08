@@ -51,7 +51,7 @@ let waitingWorker: ServiceWorker | null = null
 
 // Регистрация Service Worker + отслеживание обновлений
 onMounted(() => {
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker.register('/sw.js').then((reg) => {
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing

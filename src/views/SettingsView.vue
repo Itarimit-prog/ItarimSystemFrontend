@@ -50,6 +50,7 @@
         <div class="confirm-modal">
           <h3>⚠️ Сбросить всё?</h3>
           <p>Все задачи, привычки, финансы, тренировки, доски канбана и прогресс профиля будут безвозвратно удалены.</p>
+          <p v-if="resetError" class="reset-error">{{ resetError }}</p>
           <div class="confirm-actions">
             <button class="btn-cancel" @click="showResetConfirm = false">Отмена</button>
             <button class="btn-danger" @click="handleReset" :disabled="isResetting">
@@ -71,9 +72,11 @@ const settings = useSettingsStore()
 
 const showResetConfirm = ref(false)
 const isResetting = ref(false)
+const resetError = ref('')
 
 async function handleReset() {
   isResetting.value = true
+  resetError.value = ''
   try {
     // Сначала реально удаляем все данные на сервере — иначе диалог
     // обещает безвозвратное удаление, а на деле ничего не стирает
@@ -85,8 +88,9 @@ async function handleReset() {
       location.reload()
     }, 200)
   } catch (err) {
+    // alert() не работает в standalone-режиме iOS PWA — показываем ошибку внутри модалки
     console.error('Ошибка сброса:', err)
-    alert('Не удалось выполнить сброс')
+    resetError.value = 'Не удалось выполнить сброс. Попробуйте ещё раз.'
   } finally {
     isResetting.value = false
   }
@@ -189,6 +193,7 @@ async function handleReset() {
 }
 .confirm-modal h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
 .confirm-modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+.reset-error { color: var(--danger) !important; margin-top: -10px; }
 .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .btn-cancel {
   padding: 7px 14px; border-radius: 980px; border: 1px solid var(--border);

@@ -161,8 +161,8 @@ async function submitBoard() {
     newBoardName.value = ''
     showBoardModal.value = false
   } catch (e: any) {
+    // alert() не работает в standalone-режиме iOS PWA — просто логируем
     console.error('Ошибка создания доски:', e)
-    alert('Ошибка создания доски: ' + (e?.message || e))
   } finally {
     isSavingBoard.value = false
   }
@@ -177,8 +177,8 @@ async function submitColumn() {
     newColColor.value = '#1A7AE8'
     showColModal.value = false
   } catch (e: any) {
+    // alert() не работает в standalone-режиме iOS PWA — просто логируем
     console.error('Ошибка создания колонки:', e)
-    alert('Ошибка создания колонки: ' + (e?.message || e))
   } finally {
     isSavingColumn.value = false
   }
