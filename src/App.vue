@@ -41,6 +41,7 @@ import { useHabitsStore } from '@/stores/habits'
 import { useWorkoutsStore } from '@/stores/workouts'
 import { useFinancesStore } from '@/stores/finances'
 import { useProfileStore } from '@/stores/profile'
+import { useRoadmapStore } from '@/stores/roadmap'
 import { useXpToastStore } from '@/stores/xpToast'
 import { STAT_LABELS } from '@/types/profile'
 
@@ -94,6 +95,7 @@ onMounted(async () => {
   const workoutsStore = useWorkoutsStore()
   const financesStore = useFinancesStore()
   const profileStore = useProfileStore()
+  const roadmapStore = useRoadmapStore()
   const xpToast = useXpToastStore()
 
   try {
@@ -106,6 +108,7 @@ onMounted(async () => {
       workoutsStore.loadAll(),
       financesStore.loadAll(),
       profileStore.loadAll(),
+      roadmapStore.loadAll(),
     ])
   } catch (e) {
     console.error('Ошибка начальной загрузки:', e)

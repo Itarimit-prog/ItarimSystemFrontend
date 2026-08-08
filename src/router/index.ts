@@ -6,7 +6,7 @@ import HabitsView from '@/views/HabitsView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/planner' },
+    { path: '/', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
     { path: '/planner',  name: 'planner',  component: PlannerView },
     { path: '/kanban',   name: 'kanban',   component: KanbanView },
     { path: '/habits',   name: 'habits',   component: HabitsView },

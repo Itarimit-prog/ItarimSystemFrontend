@@ -26,6 +26,15 @@
           </div>
         </div>
 
+        <div class="field" v-if="form.task_type === 'workout'">
+          <label>Какая тренировка</label>
+          <select v-model="form.routine_id" class="routine-select">
+            <option value="" disabled>Выберите тренировку</option>
+            <option v-for="r in routines" :key="r.id" :value="r.id">{{ r.icon }} {{ r.name }}</option>
+          </select>
+          <div v-if="routines.length === 0" class="routine-hint">Нет ни одной тренировки — создайте в модуле «Тренировки»</div>
+        </div>
+
         <div class="field-row">
           <div class="field">
             <label>Начало</label>
@@ -67,15 +76,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { Task, TaskType, TaskStatus } from '@/types'
 import { TASK_TYPE_META, STATUS_META } from '@/types'
 import { usePlannerStore } from '@/stores/planner'
+import { useWorkoutsStore } from '@/stores/workouts'
 import TimeSelect from '@/components/shared/TimeSelect.vue'
 
 const props = defineProps<{ task?: Task | null; date: string }>()
 const emit = defineEmits<{ close: []; saved: []; saving: [boolean] }>()
 const store = usePlannerStore()
+const { routines } = storeToRefs(useWorkoutsStore())
 
 const isEdit = computed(() => !!props.task)
 const isSaving = ref(false)
@@ -86,6 +98,14 @@ const form = reactive({
   status: (props.task?.status ?? 'todo') as TaskStatus,
   time_start: props.task?.time_start ?? '09:00',
   time_end: props.task?.time_end ?? '10:00',
+  routine_id: props.task?.routine_id ?? '',
+})
+
+// Если сменили тип на "Тренировка" и роутин ещё не выбран — подставляем первый доступный
+watch(() => form.task_type, (type) => {
+  if (type === 'workout' && !form.routine_id && routines.value.length > 0) {
+    form.routine_id = routines.value[0].id
+  }
 })
 
 async function save(event: MouseEvent) {
@@ -97,12 +117,14 @@ async function save(event: MouseEvent) {
   
   isSaving.value = true
   emit('saving', true)
-  
+
+  const payload = { ...form, routine_id: form.task_type === 'workout' ? (form.routine_id || undefined) : undefined }
+
   try {
     if (isEdit.value && props.task) {
-      await store.updateTask(props.task.id, { ...form })
+      await store.updateTask(props.task.id, payload)
     } else {
-      await store.createTask({ ...form, date: props.date })
+      await store.createTask({ ...payload, date: props.date })
     }
     emit('saved')
   } catch (e) {
@@ -148,6 +170,14 @@ async function save(event: MouseEvent) {
 .field input:focus { border-color: var(--accent); }
 
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.routine-select {
+  width: 100%; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); font-size: 14px; color: var(--text-primary);
+  background: var(--bg-card); outline: none; box-sizing: border-box;
+}
+.routine-select:focus { border-color: var(--accent); }
+.routine-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
 .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .type-btn {

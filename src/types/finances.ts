@@ -27,9 +27,19 @@ export interface Debt {
 }
 
 export interface Balance {
-  total_income: number
-  total_expense: number
-  balance: number
+  total_income: number  // за текущий месяц
+  total_expense: number  // за текущий месяц
+  balance: number  // накопленный за всё время
+}
+
+export interface MonthArchiveEntry {
+  month: string  // "2026-06"
+  label: string  // "Июнь 2026"
+  income: number
+  expense: number
+  net: number
+  top_category?: TransactionCategory | null
+  top_category_amount?: number | null
 }
 
 export const CATEGORY_META: Record<TransactionCategory, { label: string; icon: string; bg: string }> = {

@@ -2,8 +2,14 @@
   <div class="workouts-page">
     <div class="topbar">
       <span class="page-title">Тренировки</span>
-      <button class="start-btn" @click="startWorkout" :disabled="isTimerRunning" :class="{ active: isTimerRunning }">
-        <IconPlayerPlay size="13" /> {{ isTimerRunning ? 'Идёт тренировка...' : 'Начать тренировку' }}
+      <button
+        class="start-btn"
+        @click="startWorkout"
+        :disabled="isTimerRunning || !activeRoutine"
+        :class="{ active: isTimerRunning }"
+      >
+        <IconPlayerPlay size="13" />
+        {{ isTimerRunning ? 'Идёт тренировка...' : (activeRoutine ? `Начать: ${activeRoutine.name}` : 'Начать тренировку') }}
       </button>
     </div>
 
@@ -11,50 +17,79 @@
 
     <div v-else class="body">
       <div class="main">
-        <div class="section-label">Упражнения</div>
-
-        <div class="ex-card" v-for="e in exercises" :key="e.id">
-          <div class="ex-header">
-            <span class="ex-name">{{ e.name }}</span>
-            <div class="ex-actions">
-              <button class="ex-btn" @click="editExercise(e)">
-                <IconPencil size="13" />
-              </button>
-              <button class="ex-btn del" @click="showDeleteConfirm('exercise', e.id)">
-                <IconTrash size="13" />
-              </button>
-            </div>
+        <div class="section-label">Мои тренировки</div>
+        <div class="routine-scroller">
+          <div
+            class="routine-card" v-for="r in routines" :key="r.id"
+            :class="{ active: r.id === activeRoutineId }"
+            @click="selectRoutine(r.id)"
+          >
+            <div class="routine-icon">{{ r.icon || '🏋️' }}</div>
+            <div class="routine-name">{{ r.name }}</div>
+            <div class="routine-meta">{{ (routineExercises[r.id] ?? []).length }} упражнений</div>
           </div>
-          <div class="ex-metrics">
-            <label class="metric">
-              <span class="metric-lbl">Подходы</span>
-              <input
-                type="number" min="0" placeholder="—"
-                :value="e.sets ?? ''"
-                @change="onMetricChange(e, 'sets', $event)"
-              />
-            </label>
-            <label class="metric">
-              <span class="metric-lbl">Повторения</span>
-              <input
-                type="number" min="0" placeholder="—"
-                :value="e.max_reps ?? ''"
-                @change="onMetricChange(e, 'max_reps', $event)"
-              />
-            </label>
-            <label class="metric">
-              <span class="metric-lbl">Вес, кг</span>
-              <input
-                type="number" min="0" step="0.5" placeholder="—"
-                :value="e.max_weight ?? ''"
-                @change="onMetricChange(e, 'max_weight', $event)"
-              />
-            </label>
+          <div class="routine-card new" @click="showNewRoutineModal = true">
+            <span class="plus">+</span>
+            <span>Новая тренировка</span>
           </div>
         </div>
-        <button class="add-ex-btn" @click="addExercise">
-          <IconPlus size="13" /> Добавить упражнение
-        </button>
+
+        <template v-if="activeRoutine">
+          <div class="routine-detail-head">
+            <span class="routine-detail-title">{{ activeRoutine.icon || '🏋️' }} {{ activeRoutine.name }}</span>
+            <div class="routine-actions">
+              <button class="rd-btn" @click="renameActiveRoutine">Переим.</button>
+              <button class="rd-btn danger" @click="showDeleteConfirm('routine', activeRoutine.id)">Удалить</button>
+            </div>
+          </div>
+          <div class="page-sub">
+            {{ lastWorkoutLabel }}
+          </div>
+
+          <div class="ex-card" v-for="e in activeRoutineExercises" :key="e.id">
+            <div class="ex-header">
+              <span class="ex-name">{{ e.name }}</span>
+              <div class="ex-actions">
+                <button class="ex-btn" @click="editRoutineExercise(e)">
+                  <IconPencil size="13" />
+                </button>
+                <button class="ex-btn del" @click="showDeleteConfirm('routine-exercise', e.id)">
+                  <IconTrash size="13" />
+                </button>
+              </div>
+            </div>
+            <div class="ex-metrics">
+              <label class="metric">
+                <span class="metric-lbl">Подходы</span>
+                <input
+                  type="number" min="0" placeholder="—"
+                  :value="e.sets ?? ''"
+                  @change="onMetricChange(e, 'sets', $event)"
+                />
+              </label>
+              <label class="metric">
+                <span class="metric-lbl">Повторения</span>
+                <input
+                  type="number" min="0" placeholder="—"
+                  :value="e.reps ?? ''"
+                  @change="onMetricChange(e, 'reps', $event)"
+                />
+              </label>
+              <label class="metric">
+                <span class="metric-lbl">Вес, кг</span>
+                <input
+                  type="number" min="0" step="0.5" placeholder="—"
+                  :value="e.weight ?? ''"
+                  @change="onMetricChange(e, 'weight', $event)"
+                />
+              </label>
+            </div>
+          </div>
+          <button class="add-ex-btn" @click="addExercise">
+            <IconPlus size="13" /> Добавить упражнение
+          </button>
+        </template>
+        <div v-else class="empty-state">Создайте первую тренировку, чтобы начать</div>
       </div>
 
       <div class="right">
@@ -98,7 +133,7 @@
 
         <div class="last-card" v-for="l in workoutLogs" :key="l.id">
           <div class="last-date">{{ formatDate(l.date) }}</div>
-          <div class="last-name">Тренировка — {{ l.duration_minutes }} мин.</div>
+          <div class="last-name">{{ routineNameById(l.routine_id) }} — {{ l.duration_minutes }} мин.</div>
           <div class="last-pills">
             <span class="last-pill" v-for="exId in l.exercises" :key="exId">
               {{ exerciseNameById(exId) }}
@@ -110,37 +145,51 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Модал: упражнение -->
-  <ExerciseModal
-    v-if="showExerciseModal"
-    :exercise="editingExercise"
-    @close="showExerciseModal = false"
-    @save="onExerciseSaved"
-  />
+    <!-- Модал: упражнение (в рамках активной тренировки) -->
+    <ExerciseModal
+      v-if="showExerciseModal"
+      :exercise="editingExerciseForModal"
+      @close="showExerciseModal = false"
+      @save="onExerciseSaved"
+    />
 
-  <!-- Модал: профиль -->
-  <UserMetricsModal
-    v-if="showMetricsModal"
-    :metrics="userProfile"
-    @close="showMetricsModal = false"
-    @save="onProfileSaved"
-  />
+    <!-- Модал: профиль -->
+    <UserMetricsModal
+      v-if="showMetricsModal"
+      :metrics="userProfile"
+      @close="showMetricsModal = false"
+      @save="onProfileSaved"
+    />
 
-  <!-- Модал: подтверждение удаления -->
-  <Teleport to="body" v-if="showDeleteConfirmModal">
-    <div class="overlay" @click.self="showDeleteConfirmModal = false">
-      <div class="confirm-modal">
-        <h3>Удалить?</h3>
-        <p>Это действие нельзя отменить.</p>
-        <div class="confirm-actions">
-          <button class="btn-cancel" @click="showDeleteConfirmModal = false">Отмена</button>
-          <button class="btn-danger" @click="confirmDelete">Удалить</button>
+    <!-- Модал: новая тренировка -->
+    <Teleport to="body" v-if="showNewRoutineModal">
+      <div class="overlay" @click.self="showNewRoutineModal = false">
+        <div class="mini-modal">
+          <h3>Новая тренировка</h3>
+          <input v-model="newRoutineName" placeholder="Название (напр. День спины)" @keyup.enter="submitNewRoutine" />
+          <div class="mini-footer">
+            <button class="btn-cancel" @click="showNewRoutineModal = false">Отмена</button>
+            <button class="btn-save" @click="submitNewRoutine" :disabled="!newRoutineName || isSavingRoutine">Создать</button>
+          </div>
         </div>
       </div>
-    </div>
-  </Teleport>
+    </Teleport>
+
+    <!-- Модал: подтверждение удаления -->
+    <Teleport to="body" v-if="showDeleteConfirmModal">
+      <div class="overlay" @click.self="showDeleteConfirmModal = false">
+        <div class="confirm-modal">
+          <h3>Удалить?</h3>
+          <p>Это действие нельзя отменить.</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" @click="showDeleteConfirmModal = false">Отмена</button>
+            <button class="btn-danger" @click="confirmDelete">Удалить</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -150,18 +199,49 @@ import { useWorkoutsStore } from '@/stores/workouts'
 import ExerciseModal from '@/components/workouts/ExerciseModal.vue'
 import UserMetricsModal from '@/components/workouts/UserMetricsModal.vue'
 import { IconPlayerPlay, IconPlayerStop, IconPencil, IconTrash, IconPlus } from '@tabler/icons-vue'
-import type { Exercise } from '@/types/workouts_models'
+import type { Exercise, RoutineExercise } from '@/types/workouts_models'
 
 const store = useWorkoutsStore()
-const { exercises, workoutLogs, userProfile, loading, bmi, bmiStatus } = storeToRefs(store)
+const {
+  exercises, workoutLogs, userProfile, loading, bmi, bmiStatus,
+  routines, routineExercises, activeRoutineId, lastWorkoutDate,
+} = storeToRefs(store)
 
 const showExerciseModal = ref(false)
 const showMetricsModal = ref(false)
 const showDeleteConfirmModal = ref(false)
-const editingExercise = ref<Exercise | null>(null)
-const deleteTarget = ref<{ type: 'exercise' | 'workout'; id: string } | null>(null)
+const showNewRoutineModal = ref(false)
+const newRoutineName = ref('')
+const isSavingRoutine = ref(false)
+const editingRoutineExercise = ref<RoutineExercise | null>(null)
+const deleteTarget = ref<{ type: 'workout' | 'routine' | 'routine-exercise'; id: string } | null>(null)
 const isSavingExercise = ref(false)
 const isSavingProfile = ref(false)
+
+const activeRoutine = computed(() => routines.value.find(r => r.id === activeRoutineId.value) ?? null)
+const activeRoutineExercises = computed(() => activeRoutineId.value ? (routineExercises.value[activeRoutineId.value] ?? []) : [])
+
+const lastWorkoutLabel = computed(() => {
+  if (!activeRoutineId.value) return ''
+  const d = lastWorkoutDate.value(activeRoutineId.value)
+  return d ? `Последний раз: ${formatDate(d)}` : 'Ещё не было пройдено'
+})
+
+// ExerciseModal ждёт форму в терминах Exercise (max_reps/max_weight) — маппим из RoutineExercise (reps/weight)
+const editingExerciseForModal = computed<Exercise | null>(() => {
+  const e = editingRoutineExercise.value
+  if (!e) return null
+  return {
+    id: e.id,
+    name: e.name,
+    description: e.description,
+    exercise_type: e.exercise_type,
+    muscle_groups: e.muscle_groups,
+    max_reps: e.reps,
+    max_weight: e.weight,
+    sets: e.sets,
+  }
+})
 
 // ── Таймер тренировки ──
 const isTimerRunning = ref(false)
@@ -195,11 +275,47 @@ function formatDateLocal(date: Date): string {
 }
 
 function exerciseNameById(id: string) {
-  return exercises.value.find(e => e.id === id)?.name ?? id
+  return exercises.value.find(e => e.id === id)?.name
+    ?? activeRoutineExercises.value.find(e => e.exercise_id === id)?.name
+    ?? id
+}
+
+function routineNameById(id?: string | null) {
+  if (!id) return 'Тренировка'
+  return routines.value.find(r => r.id === id)?.name ?? 'Тренировка'
+}
+
+function selectRoutine(id: string) {
+  store.selectRoutine(id)
+}
+
+async function submitNewRoutine() {
+  if (!newRoutineName.value || isSavingRoutine.value) return
+  isSavingRoutine.value = true
+  try {
+    await store.createRoutine(newRoutineName.value.trim(), '🏋️')
+    newRoutineName.value = ''
+    showNewRoutineModal.value = false
+  } catch (err) {
+    console.error('Ошибка создания тренировки:', err)
+  } finally {
+    isSavingRoutine.value = false
+  }
+}
+
+async function renameActiveRoutine() {
+  if (!activeRoutine.value) return
+  const name = prompt('Новое название тренировки', activeRoutine.value.name)
+  if (!name || !name.trim()) return
+  try {
+    await store.renameRoutine(activeRoutine.value.id, name.trim())
+  } catch (err) {
+    console.error('Ошибка переименования тренировки:', err)
+  }
 }
 
 function startWorkout() {
-  if (isTimerRunning.value) return
+  if (isTimerRunning.value || !activeRoutine.value) return
   timerSeconds.value = 0
   isTimerRunning.value = true
   timerInterval = setInterval(() => { timerSeconds.value++ }, 1000)
@@ -209,13 +325,14 @@ async function stopWorkout() {
   if (!isTimerRunning.value) return
   isTimerRunning.value = false
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
-  if (timerSeconds.value > 0) {
+  if (timerSeconds.value > 0 && activeRoutineId.value) {
     try {
       await store.createWorkout({
         date: formatDateLocal(new Date()),
         duration_minutes: Math.max(1, timerMinutes.value),
-        exercises: exercises.value.map(e => e.id),
+        exercises: activeRoutineExercises.value.map(e => e.exercise_id),
         notes: `Тренировка ${timerDisplay.value}`,
+        routine_id: activeRoutineId.value,
       })
     } catch (err: any) {
       console.error('Ошибка сохранения тренировки:', err)
@@ -226,31 +343,23 @@ async function stopWorkout() {
 }
 
 function addExercise() {
-  editingExercise.value = null
+  editingRoutineExercise.value = null
   isSavingExercise.value = false
   showExerciseModal.value = true
 }
 
-function editExercise(e: Exercise) {
-  editingExercise.value = e
+function editRoutineExercise(e: RoutineExercise) {
+  editingRoutineExercise.value = e
   isSavingExercise.value = false
   showExerciseModal.value = true
 }
 
-async function onMetricChange(e: Exercise, field: 'sets' | 'max_reps' | 'max_weight', event: Event) {
+async function onMetricChange(e: RoutineExercise, field: 'sets' | 'reps' | 'weight', event: Event) {
+  if (!activeRoutineId.value) return
   const raw = (event.target as HTMLInputElement).value
   const value = raw === '' ? undefined : Number(raw)
   try {
-    await store.updateExercise(e.id, {
-      name: e.name,
-      description: e.description,
-      exercise_type: e.exercise_type,
-      muscle_groups: e.muscle_groups,
-      max_weight: e.max_weight,
-      max_reps: e.max_reps,
-      sets: e.sets,
-      [field]: value,
-    })
+    await store.updateRoutineExercise(activeRoutineId.value, e.id, { [field]: value })
   } catch (err) {
     console.error('Ошибка сохранения показателя:', err)
   }
@@ -261,30 +370,42 @@ function editProfile() {
   showMetricsModal.value = true
 }
 
-function showDeleteConfirm(type: 'exercise' | 'workout', id: string) {
+function showDeleteConfirm(type: 'workout' | 'routine' | 'routine-exercise', id: string) {
   deleteTarget.value = { type, id }
   showDeleteConfirmModal.value = true
 }
 
 async function confirmDelete() {
   if (!deleteTarget.value) return
-  if (deleteTarget.value.type === 'exercise') {
-    await store.deleteExercise(deleteTarget.value.id)
+  const { type, id } = deleteTarget.value
+  if (type === 'routine-exercise' && activeRoutineId.value) {
+    await store.deleteRoutineExercise(activeRoutineId.value, id)
+  } else if (type === 'routine') {
+    await store.deleteRoutine(id)
   } else {
-    await store.deleteWorkoutLog(deleteTarget.value.id)
+    await store.deleteWorkoutLog(id)
   }
   showDeleteConfirmModal.value = false
   deleteTarget.value = null
 }
 
 async function onExerciseSaved(data: Omit<Exercise, 'id'>) {
-  if (isSavingExercise.value) return
+  if (isSavingExercise.value || !activeRoutineId.value) return
   isSavingExercise.value = true
   try {
-    if (editingExercise.value) {
-      await store.updateExercise(editingExercise.value.id, data)
+    const payload = {
+      name: data.name,
+      description: data.description,
+      exercise_type: data.exercise_type,
+      muscle_groups: data.muscle_groups,
+      sets: data.sets,
+      reps: data.max_reps,
+      weight: data.max_weight,
+    }
+    if (editingRoutineExercise.value) {
+      await store.updateRoutineExercise(activeRoutineId.value, editingRoutineExercise.value.id, payload)
     } else {
-      await store.createExercise(data)
+      await store.addRoutineExercise(activeRoutineId.value, payload)
     }
     showExerciseModal.value = false
   } catch (err) {
@@ -356,6 +477,38 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
   font-size: 11px; font-weight: 500; color: var(--text-secondary);
   text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
 }
+
+.routine-scroller { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; }
+.routine-card {
+  flex-shrink: 0; width: 140px; padding: 12px 14px; cursor: pointer;
+  background: var(--bg-card); border-radius: 14px; border: 1.5px solid var(--border);
+  transition: border-color 0.15s, background 0.15s;
+}
+.routine-card:hover { border-color: var(--accent); }
+.routine-card.active { border-color: var(--accent); background: var(--accent-light); }
+.routine-icon { font-size: 22px; margin-bottom: 8px; }
+.routine-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.routine-meta { font-size: 10.5px; color: var(--text-muted); }
+.routine-card.new {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; border-style: dashed; color: var(--text-muted);
+}
+.routine-card.new .plus { font-size: 20px; }
+.routine-card.new span:last-child { font-size: 11.5px; }
+
+.routine-detail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.routine-detail-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.routine-actions { display: flex; gap: 6px; }
+.rd-btn {
+  padding: 6px 12px; border-radius: 980px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border); background: none; color: var(--text-secondary); cursor: pointer;
+}
+.rd-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rd-btn.danger { color: var(--danger); border-color: var(--danger-light); }
+.rd-btn.danger:hover { background: var(--danger-light); }
+
+.page-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
+.empty-state { font-size: 13px; color: var(--text-muted); padding: 30px; text-align: center; border: 0.5px dashed var(--border); border-radius: 14px; }
 
 .ex-card {
   background: var(--bg-card); border-radius: 14px; border: 0.5px solid var(--border);
@@ -440,6 +593,25 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
   padding: 7px 14px; border-radius: 980px; border: none;
   background: var(--danger); color: #fff; font-size: 12px; font-weight: 500; cursor: pointer;
 }
+
+.mini-modal {
+  background: var(--bg-card); border-radius: 20px; padding: 22px;
+  width: 320px; box-shadow: 0 20px 60px rgba(10,30,53,0.15);
+}
+.mini-modal h3 { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 14px; }
+.mini-modal input {
+  width: 100%; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); font-size: 14px; color: var(--text-primary);
+  outline: none; box-sizing: border-box; margin-bottom: 16px;
+  background: var(--bg-card);
+}
+.mini-modal input:focus { border-color: var(--accent); }
+.mini-footer { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-save {
+  padding: 8px 18px; border-radius: 980px; border: none;
+  background: var(--accent); color: #fff; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .timer-card {
   background: var(--accent-light); border-radius:14px; padding: 13px; margin-bottom: 14px;

@@ -23,7 +23,26 @@ export const useHabitsStore = defineStore('habits', () => {
     loading.value = true
     try {
       habits.value = await habitsApi.getAll()
-      await Promise.all(habits.value.map(h => loadHabitData(h.id)))
+      // Загружаем данные всех привычек параллельно, но сливаем в стор ОДНИМ
+      // присваиванием на каждое поле — иначе конкурентные read-modify-write
+      // по checks.value/stats.value затирают друг друга (см. аналогичный
+      // баг в stores/workouts.ts): чья запись завершится последней, та и "выигрывает",
+      // а данные остальных привычек, загруженные раньше, теряются.
+      const results = await Promise.all(habits.value.map(async h => {
+        const [habitChecks, habitStats] = await Promise.all([
+          habitsApi.getChecks(h.id, today()),
+          habitsApi.getStats(h.id),
+        ])
+        return { id: h.id, habitChecks, habitStats }
+      }))
+      const newChecks: Record<string, Check[]> = {}
+      const newStats: Record<string, HabitStats> = {}
+      for (const r of results) {
+        newChecks[r.id] = r.habitChecks
+        newStats[r.id] = r.habitStats
+      }
+      checks.value = newChecks
+      stats.value = newStats
     } finally {
       loading.value = false
     }

@@ -1,8 +1,8 @@
 import axios from 'axios'
 import type { Task, Template } from '@/types'
-import type { Exercise, UserProfile } from '@/types/workouts_models'
+import type { Exercise, UserProfile, Routine, RoutineExercise, RoutineExerciseCreate } from '@/types/workouts_models'
 import type { WorkoutLog } from '@/types/workouts'
-import type { Transaction, Debt, Balance } from '@/types/finances'
+import type { Transaction, Debt, Balance, MonthArchiveEntry } from '@/types/finances'
 
 // Определение базового URL API
 // Всегда используем Railway backend
@@ -93,12 +93,40 @@ export const workoutsApi = {
 
   updateProfile: (payload: Partial<UserProfile>) =>
     api.put<UserProfile>('/workouts/profile/', payload).then(r => r.data),
+
+  // Тренировки (роутины)
+  getRoutines: () =>
+    api.get<Routine[]>('/workouts/routines/').then(r => r.data),
+
+  createRoutine: (name: string, icon?: string) =>
+    api.post<Routine>('/workouts/routines/', { name, icon }).then(r => r.data),
+
+  updateRoutine: (id: string, payload: Partial<Pick<Routine, 'name' | 'icon'>>) =>
+    api.patch<Routine>(`/workouts/routines/${id}`, payload).then(r => r.data),
+
+  deleteRoutine: (id: string) =>
+    api.delete(`/workouts/routines/${id}`),
+
+  getRoutineExercises: (routineId: string) =>
+    api.get<RoutineExercise[]>(`/workouts/routines/${routineId}/exercises`).then(r => r.data),
+
+  addRoutineExercise: (routineId: string, payload: RoutineExerciseCreate) =>
+    api.post<RoutineExercise>(`/workouts/routines/${routineId}/exercises`, payload).then(r => r.data),
+
+  updateRoutineExercise: (routineExerciseId: string, payload: Partial<Pick<RoutineExercise, 'sets' | 'reps' | 'weight'>>) =>
+    api.patch<RoutineExercise>(`/workouts/routines/exercises/${routineExerciseId}`, payload).then(r => r.data),
+
+  deleteRoutineExercise: (routineExerciseId: string) =>
+    api.delete(`/workouts/routines/exercises/${routineExerciseId}`),
 }
 
 export const financesApi = {
   // Баланс
   getBalance: () =>
     api.get<Balance>('/finances/balance/').then(r => r.data),
+
+  getArchive: () =>
+    api.get<MonthArchiveEntry[]>('/finances/archive/').then(r => r.data),
 
   // Транзакции
   getTransactions: () =>

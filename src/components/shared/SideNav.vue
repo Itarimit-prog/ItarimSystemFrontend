@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import {
+  IconLayoutDashboard,
   IconCalendarWeek,
   IconRepeat,
   IconLayoutKanban,
@@ -43,6 +44,7 @@ import {
 } from '@tabler/icons-vue'
 
 const navItems = [
+  { to: '/',          icon: IconLayoutDashboard, label: 'Дашборд' },
   { to: '/planner',  icon: IconCalendarWeek, label: 'Планировщик' },
   { to: '/habits',   icon: IconRepeat,        label: 'Привычки' },
   { to: '/kanban',   icon: IconLayoutKanban,  label: 'Канбан' },

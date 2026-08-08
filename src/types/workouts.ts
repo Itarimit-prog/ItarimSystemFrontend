@@ -5,4 +5,5 @@ export interface WorkoutLog {
   duration_minutes: number
   exercises: string[]  // список ID упражнений
   notes?: string
+  routine_id?: string | null
 }

@@ -1,25 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Transaction, Debt, Balance } from '@/types/finances'
+import type { Transaction, Debt, Balance, MonthArchiveEntry } from '@/types/finances'
 import { financesApi } from '@/api'
 
 export const useFinancesStore = defineStore('finances', () => {
   const transactions = ref<Transaction[]>([])
   const debts = ref<Debt[]>([])
   const balance = ref<Balance>({ total_income: 0, total_expense: 0, balance: 0 })
+  const archive = ref<MonthArchiveEntry[]>([])
   const loading = ref(false)
 
   async function loadAll() {
     loading.value = true
     try {
-      const [txns, dbs, bal] = await Promise.all([
+      const [txns, dbs, bal, arch] = await Promise.all([
         financesApi.getTransactions(),
         financesApi.getDebts(),
         financesApi.getBalance(),
+        financesApi.getArchive(),
       ])
       transactions.value = txns
       debts.value = dbs
       balance.value = bal
+      archive.value = arch
     } finally {
       loading.value = false
     }
@@ -160,7 +163,7 @@ export const useFinancesStore = defineStore('finances', () => {
   }
 
   return {
-    transactions, debts, balance, loading,
+    transactions, debts, balance, archive, loading,
     loadAll, createTransaction, updateTransaction, deleteTransaction,
     createDebt, updateDebt, deleteDebt,
   }

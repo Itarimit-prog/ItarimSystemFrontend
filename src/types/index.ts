@@ -1,4 +1,4 @@
-export type TaskType = 'work' | 'study' | 'personal' | 'routine' | 'rest'
+export type TaskType = 'work' | 'study' | 'personal' | 'routine' | 'rest' | 'workout'
 export type TaskStatus = 'todo' | 'done' | 'pending'
 
 export interface Task {
@@ -9,6 +9,7 @@ export interface Task {
   time_start: string  // "HH:MM"
   time_end: string    // "HH:MM"
   date: string        // "YYYY-MM-DD"
+  routine_id?: string | null  // для task_type='workout' — какая тренировка запланирована
 }
 
 export interface TemplateTaskItem {
@@ -30,6 +31,7 @@ export const TASK_TYPE_META: Record<TaskType, { label: string; color: string; bg
   personal: { label: 'Личная жизнь', color: 'var(--tag-emerald-text)',  bg: 'var(--tag-emerald-bg)', border: '#1D9E75', badgeBg: 'var(--tag-emerald-bg)', badgeText: 'var(--tag-emerald-text)' },
   routine:  { label: 'Рутина',       color: 'var(--tag-gray-text)',     bg: 'var(--tag-gray-bg)',    border: '#9B9A97', badgeBg: 'var(--tag-gray-bg)',    badgeText: 'var(--tag-gray-text)' },
   rest:     { label: 'Отдых',        color: 'var(--success)',           bg: 'var(--success-light)',  border: '#5A9C1A', badgeBg: 'var(--success-light)',  badgeText: 'var(--success)' },
+  workout:  { label: 'Тренировка',   color: '#9B59B6',                  bg: 'var(--tag-purple-bg)',  border: '#9B59B6', badgeBg: 'var(--tag-purple-bg)',  badgeText: '#9B59B6' },
 }
 
 export const STATUS_META: Record<TaskStatus, { label: string; bg: string; color: string; icon: string }> = {

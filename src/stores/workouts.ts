@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { WorkoutLog } from '@/types/workouts'
-import type { Exercise, UserProfile } from '@/types/workouts_models'
+import type { Exercise, UserProfile, Routine, RoutineExercise, RoutineExerciseCreate } from '@/types/workouts_models'
 import { workoutsApi } from '@/api'
 import { useXpToastStore } from '@/stores/xpToast'
 
@@ -10,6 +10,103 @@ export const useWorkoutsStore = defineStore('workouts', () => {
   const workoutLogs = ref<WorkoutLog[]>([])
   const userProfile = ref<UserProfile | null>(null)
   const loading = ref(false)
+
+  // ── Тренировки-роутины ──
+  const routines = ref<Routine[]>([])
+  const routineExercises = ref<Record<string, RoutineExercise[]>>({})
+  const activeRoutineId = ref<string | null>(null)
+
+  const lastWorkoutDate = computed(() => (routineId: string): string | null => {
+    const logs = workoutLogs.value.filter(w => w.routine_id === routineId)
+    if (logs.length === 0) return null
+    return logs.reduce((max, w) => w.date > max ? w.date : max, logs[0].date)
+  })
+
+  async function loadRoutines() {
+    routines.value = await workoutsApi.getRoutines()
+    if (!activeRoutineId.value && routines.value.length > 0) {
+      activeRoutineId.value = routines.value[0].id
+    }
+    // Загружаем упражнения всех тренировок параллельно, но сливаем в стор ОДНИМ
+    // присваиванием — иначе конкурентные read-modify-write по routineExercises.value
+    // затирают друг друга (чья запись завершится последней, та и "выигрывает").
+    const lists = await Promise.all(routines.value.map(r => workoutsApi.getRoutineExercises(r.id)))
+    const merged: Record<string, RoutineExercise[]> = {}
+    routines.value.forEach((r, i) => { merged[r.id] = lists[i] })
+    routineExercises.value = merged
+  }
+
+  async function loadRoutineExercises(routineId: string) {
+    const list = await workoutsApi.getRoutineExercises(routineId)
+    routineExercises.value = { ...routineExercises.value, [routineId]: list }
+  }
+
+  function selectRoutine(id: string) {
+    activeRoutineId.value = id
+  }
+
+  async function createRoutine(name: string, icon?: string) {
+    const created = await workoutsApi.createRoutine(name, icon)
+    routines.value = [...routines.value, created]
+    routineExercises.value = { ...routineExercises.value, [created.id]: [] }
+    activeRoutineId.value = created.id
+    return created
+  }
+
+  async function renameRoutine(id: string, name: string) {
+    const updated = await workoutsApi.updateRoutine(id, { name })
+    routines.value = routines.value.map(r => r.id === id ? updated : r)
+  }
+
+  async function deleteRoutine(id: string) {
+    await workoutsApi.deleteRoutine(id)
+    routines.value = routines.value.filter(r => r.id !== id)
+    const rest = { ...routineExercises.value }
+    delete rest[id]
+    routineExercises.value = rest
+    if (activeRoutineId.value === id) {
+      activeRoutineId.value = routines.value[0]?.id ?? null
+    }
+  }
+
+  async function addRoutineExercise(routineId: string, payload: RoutineExerciseCreate) {
+    const created = await workoutsApi.addRoutineExercise(routineId, payload)
+    routineExercises.value = {
+      ...routineExercises.value,
+      [routineId]: [...(routineExercises.value[routineId] ?? []), created]
+    }
+    return created
+  }
+
+  async function updateRoutineExercise(routineId: string, routineExerciseId: string, payload: Partial<Pick<RoutineExercise, 'sets' | 'reps' | 'weight'>>) {
+    const list = routineExercises.value[routineId] ?? []
+    const oldList = [...list]
+    routineExercises.value = {
+      ...routineExercises.value,
+      [routineId]: list.map(e => e.id === routineExerciseId ? { ...e, ...payload } : e)
+    }
+    try {
+      const updated = await workoutsApi.updateRoutineExercise(routineExerciseId, payload)
+      routineExercises.value = {
+        ...routineExercises.value,
+        [routineId]: (routineExercises.value[routineId] ?? []).map(e => e.id === routineExerciseId ? updated : e)
+      }
+    } catch (e) {
+      routineExercises.value = { ...routineExercises.value, [routineId]: oldList }
+      throw e
+    }
+  }
+
+  async function deleteRoutineExercise(routineId: string, routineExerciseId: string) {
+    const list = routineExercises.value[routineId] ?? []
+    routineExercises.value = { ...routineExercises.value, [routineId]: list.filter(e => e.id !== routineExerciseId) }
+    try {
+      await workoutsApi.deleteRoutineExercise(routineExerciseId)
+    } catch (e) {
+      routineExercises.value = { ...routineExercises.value, [routineId]: list }
+      throw e
+    }
+  }
 
   const bmi = computed<number | null>(() => {
     if (!userProfile.value?.height_cm || !userProfile.value?.weight_kg) return null
@@ -33,6 +130,7 @@ export const useWorkoutsStore = defineStore('workouts', () => {
         workoutsApi.getExercises(),
         workoutsApi.getAll(),
         workoutsApi.getProfile(),
+        loadRoutines(),
       ])
       exercises.value = exList
       workoutLogs.value = wList
@@ -154,5 +252,8 @@ export const useWorkoutsStore = defineStore('workouts', () => {
     exercises, workoutLogs, userProfile, loading, bmi, bmiStatus,
     loadAll, createExercise, updateExercise, deleteExercise,
     createWorkout, deleteWorkoutLog, updateMetrics,
+    routines, routineExercises, activeRoutineId, lastWorkoutDate,
+    loadRoutines, selectRoutine, createRoutine, renameRoutine, deleteRoutine,
+    addRoutineExercise, updateRoutineExercise, deleteRoutineExercise,
   }
 })

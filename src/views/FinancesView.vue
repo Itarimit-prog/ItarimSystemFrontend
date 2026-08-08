@@ -96,6 +96,35 @@
             <div v-if="filteredTransactions.length === 0" class="empty-state">Нет транзакций</div>
           </div>
         </div>
+
+        <!-- Архив по месяцам -->
+        <div>
+          <div class="section-label" style="margin-top:20px;">Архив по месяцам</div>
+          <div class="archive-list" v-if="archive.length > 0">
+            <div class="archive-card" v-for="m in archive" :key="m.month">
+              <div class="archive-row" @click="toggleArchiveMonth(m.month)">
+                <span class="archive-month">{{ m.label }}</span>
+                <div class="archive-bar-wrap">
+                  <div class="archive-bar inc" :style="{ width: archiveBarPct(m).inc + '%' }"></div>
+                  <div class="archive-bar exp" :style="{ width: archiveBarPct(m).exp + '%' }"></div>
+                </div>
+                <span class="archive-net" :class="m.net >= 0 ? 'pos' : 'neg'">
+                  {{ m.net >= 0 ? '+' : '' }}{{ formatAmount(m.net) }}
+                </span>
+                <span class="archive-chevron">{{ expandedMonth === m.month ? '▾' : '▸' }}</span>
+              </div>
+              <div class="archive-detail" v-if="expandedMonth === m.month">
+                <div class="archive-detail-row"><span class="lbl">Доход</span><span class="val plus">+{{ formatAmount(m.income) }}</span></div>
+                <div class="archive-detail-row"><span class="lbl">Расход</span><span class="val minus">−{{ formatAmount(m.expense) }}</span></div>
+                <div class="archive-detail-row" v-if="m.top_category">
+                  <span class="lbl">Топ категория расходов</span>
+                  <span class="val">{{ CATEGORY_META[m.top_category].label }} · {{ formatAmount(m.top_category_amount ?? 0) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-state">Пока нет закрытых месяцев</div>
+        </div>
       </div>
 
       <!-- Правая часть: долги + категории -->
@@ -177,14 +206,24 @@ import { storeToRefs } from 'pinia'
 import { useFinancesStore } from '@/stores/finances'
 import {
   CATEGORY_META, TRANSACTION_TYPE_META, DEBT_STATUS_META,
-  type Transaction, type Debt, type TransactionCategory
+  type Transaction, type Debt, type TransactionCategory, type MonthArchiveEntry
 } from '@/types/finances'
 import TransactionModal from '@/components/finances/TransactionModal.vue'
 import DebtModal from '@/components/finances/DebtModal.vue'
 import { IconPencil, IconTrash, IconPlus } from '@tabler/icons-vue'
 
 const store = useFinancesStore()
-const { transactions, debts, balance, loading } = storeToRefs(store)
+const { transactions, debts, balance, archive, loading } = storeToRefs(store)
+
+const expandedMonth = ref<string | null>(null)
+function toggleArchiveMonth(month: string) {
+  expandedMonth.value = expandedMonth.value === month ? null : month
+}
+function archiveBarPct(m: MonthArchiveEntry) {
+  const total = m.income + m.expense
+  if (total <= 0) return { inc: 0, exp: 0 }
+  return { inc: (m.income / total) * 100, exp: (m.expense / total) * 100 }
+}
 
 // Модалки
 const showTransactionModal = ref(false)
@@ -431,6 +470,33 @@ function closeAll() {
 .txn-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
 
 .empty-state { font-size: 12px; color: var(--text-muted); padding: 20px; text-align: center; border: 0.5px dashed var(--border); border-radius: 12px; }
+
+/* Архив по месяцам */
+.archive-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.archive-card {
+  background: var(--bg-card); border-radius: 12px; border: 0.5px solid var(--border);
+  overflow: hidden;
+}
+.archive-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 13px; cursor: pointer;
+}
+.archive-month { font-size: 13px; font-weight: 500; color: var(--text-primary); width: 92px; flex-shrink: 0; }
+.archive-bar-wrap {
+  flex: 1; display: flex; gap: 2px; height: 6px; border-radius: 4px; overflow: hidden;
+  background: var(--border);
+}
+.archive-bar.inc { background: var(--success); }
+.archive-bar.exp { background: var(--danger); }
+.archive-net { font-size: 12.5px; font-weight: 600; flex-shrink: 0; }
+.archive-net.pos { color: #3B6D11; }
+.archive-net.neg { color: var(--danger); }
+.archive-chevron { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+.archive-detail { padding: 10px 13px 12px; background: var(--bg-primary); }
+.archive-detail-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+.archive-detail-row .lbl { color: var(--text-muted); }
+.archive-detail-row .val { font-weight: 500; }
+.archive-detail-row .val.plus { color: #3B6D11; }
+.archive-detail-row .val.minus { color: var(--danger); }
 
 /* ── Правая панель ── */
 .right {
