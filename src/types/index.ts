@@ -6,8 +6,10 @@ export interface Task {
   title: string
   task_type: TaskType
   status: TaskStatus
-  time_start: string  // "HH:MM"
-  time_end: string    // "HH:MM"
+  time_start?: string | null  // "HH:MM" — задано у задач с точным временем
+  time_end?: string | null    // "HH:MM" — задано у задач с точным временем
+  duration_minutes?: number | null  // задано у задач-длительностей (режим "свободное планирование")
+  order_index?: number | null       // ручной порядок среди задач-длительностей
   date: string        // "YYYY-MM-DD"
   routine_id?: string | null  // для task_type='workout' — какая тренировка запланирована
 }

@@ -22,6 +22,20 @@
         <div class="setting-hint">Фиолетовые акценты вместо голубых</div>
       </div>
 
+      <!-- Планер -->
+      <div class="section-label">Планер</div>
+      <div class="setting-card">
+        <div class="setting-row planner-mode-row">
+          <button
+            v-for="opt in plannerModeOptions" :key="opt.value"
+            class="mode-btn"
+            :class="{ active: settings.plannerMode === opt.value }"
+            @click="settings.setPlannerMode(opt.value)"
+          >{{ opt.label }}</button>
+        </div>
+        <div class="setting-hint">{{ plannerModeHint }}</div>
+      </div>
+
       <!-- Данные -->
       <div class="section-label">Данные</div>
       <div class="setting-card danger-zone">
@@ -64,11 +78,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useSettingsStore } from '@/stores/settings'
+import { ref, computed } from 'vue'
+import { useSettingsStore, type PlannerMode } from '@/stores/settings'
 import { systemApi } from '@/api'
 
 const settings = useSettingsStore()
+
+const plannerModeOptions: { value: PlannerMode; label: string }[] = [
+  { value: 'full', label: 'Полный контроль' },
+  { value: 'free', label: 'Свободное планирование' },
+  { value: 'mixed', label: 'Смешанный' },
+]
+
+const plannerModeHint = computed(() => {
+  switch (settings.plannerMode) {
+    case 'free':
+      return 'Для задач указывается только длительность, без точного времени начала и конца'
+    case 'mixed':
+      return 'Для каждой задачи можно выбрать: точное время или просто длительность'
+    default:
+      return 'Каждая задача имеет точное время начала и конца'
+  }
+})
 
 const showResetConfirm = ref(false)
 const isResetting = ref(false)
@@ -167,6 +198,19 @@ async function handleReset() {
 .toggle-btn.active .toggle-knob {
   transform: translateX(20px);
 }
+
+/* Planner mode */
+.planner-mode-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mode-btn {
+  padding: 7px 14px; border-radius: 980px; border: 1px solid var(--border);
+  background: none; font-size: 12.5px; color: var(--text-secondary); cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+.mode-btn.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
 
 /* Danger zone */
 .danger-zone {

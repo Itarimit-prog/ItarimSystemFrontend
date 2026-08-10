@@ -4,22 +4,13 @@ import type { Exercise, UserProfile, Routine, RoutineExercise, RoutineExerciseCr
 import type { WorkoutLog } from '@/types/workouts'
 import type { Transaction, Debt, Balance, MonthArchiveEntry } from '@/types/finances'
 
-// Определение базового URL API
-// Всегда используем Railway backend
-const RAILWAY_API_URL = 'https://web-production-c01c.up.railway.app'
-
-
-const getApiBaseURL = () => {
-  // Проверка на Tauri окружение
-  if (typeof window !== 'undefined' && '__TAURI__' in window) {
-    return RAILWAY_API_URL
-  }
-  // Web режим (локальный или production) - всегда Railway
-  return RAILWAY_API_URL
-}
+// Бэкенд теперь всегда локальный: в Tauri-сборке это sidecar-процесс,
+// запускаемый main.rs на этом порту; при обычной веб-разработке (npm run dev)
+// это локально запущенный uvicorn на том же порту.
+const LOCAL_API_URL = 'http://127.0.0.1:8420'
 
 const api = axios.create({
-  baseURL: getApiBaseURL(),
+  baseURL: LOCAL_API_URL,
   headers: { 'X-API-Key': import.meta.env.VITE_API_KEY ?? '' },
 })
 

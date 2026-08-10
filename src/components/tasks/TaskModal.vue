@@ -35,7 +35,20 @@
           <div v-if="routines.length === 0" class="routine-hint">Нет ни одной тренировки — создайте в модуле «Тренировки»</div>
         </div>
 
-        <div class="field-row">
+        <div class="field" v-if="settings.plannerMode === 'mixed'">
+          <div class="mode-toggle">
+            <button
+              class="mode-toggle-btn" :class="{ active: entryMode === 'fixed' }"
+              @click="entryMode = 'fixed'"
+            >Точное время</button>
+            <button
+              class="mode-toggle-btn" :class="{ active: entryMode === 'duration' }"
+              @click="entryMode = 'duration'"
+            >Длительность</button>
+          </div>
+        </div>
+
+        <div class="field-row" v-if="effectiveMode === 'fixed'">
           <div class="field">
             <label>Начало</label>
             <TimeSelect v-model="form.time_start" />
@@ -44,6 +57,22 @@
             <label>Конец</label>
             <TimeSelect v-model="form.time_end" />
           </div>
+        </div>
+
+        <div class="field" v-else>
+          <label>Длительность</label>
+          <div class="duration-row">
+            <button
+              v-for="p in durationPresets" :key="p"
+              class="duration-chip" :class="{ active: form.duration_minutes === p }"
+              @click="form.duration_minutes = p"
+            >{{ formatDuration(p) }}</button>
+          </div>
+          <input
+            type="number" min="5" step="5"
+            v-model.number="form.duration_minutes"
+            class="duration-input" placeholder="Минут"
+          />
         </div>
 
         <div class="field">
@@ -82,15 +111,33 @@ import type { Task, TaskType, TaskStatus } from '@/types'
 import { TASK_TYPE_META, STATUS_META } from '@/types'
 import { usePlannerStore } from '@/stores/planner'
 import { useWorkoutsStore } from '@/stores/workouts'
+import { useSettingsStore } from '@/stores/settings'
 import TimeSelect from '@/components/shared/TimeSelect.vue'
 
 const props = defineProps<{ task?: Task | null; date: string }>()
 const emit = defineEmits<{ close: []; saved: []; saving: [boolean] }>()
 const store = usePlannerStore()
 const { routines } = storeToRefs(useWorkoutsStore())
+const settings = useSettingsStore()
 
 const isEdit = computed(() => !!props.task)
 const isSaving = ref(false)
+
+const durationPresets = [30, 60, 90, 120]
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `${m} мин`
+  if (m === 0) return `${h} ч`
+  return `${h} ч ${m} мин`
+}
+
+const entryMode = ref<'fixed' | 'duration'>(props.task?.duration_minutes != null ? 'duration' : 'fixed')
+const effectiveMode = computed(() => {
+  if (settings.plannerMode === 'full') return 'fixed'
+  if (settings.plannerMode === 'free') return 'duration'
+  return entryMode.value
+})
 
 const form = reactive({
   title: props.task?.title ?? '',
@@ -98,6 +145,7 @@ const form = reactive({
   status: (props.task?.status ?? 'todo') as TaskStatus,
   time_start: props.task?.time_start ?? '09:00',
   time_end: props.task?.time_end ?? '10:00',
+  duration_minutes: props.task?.duration_minutes ?? 60,
   routine_id: props.task?.routine_id ?? '',
 })
 
@@ -118,13 +166,25 @@ async function save(event: MouseEvent) {
   isSaving.value = true
   emit('saving', true)
 
-  const payload = { ...form, routine_id: form.task_type === 'workout' ? (form.routine_id || undefined) : undefined }
+  const payload: Partial<Task> = {
+    ...form,
+    routine_id: form.task_type === 'workout' ? (form.routine_id || undefined) : undefined,
+  }
+
+  if (effectiveMode.value === 'duration') {
+    payload.time_start = null
+    payload.time_end = null
+    payload.duration_minutes = form.duration_minutes || 30
+  } else {
+    payload.duration_minutes = null
+    payload.order_index = null
+  }
 
   try {
     if (isEdit.value && props.task) {
       await store.updateTask(props.task.id, payload)
     } else {
-      await store.createTask({ ...payload, date: props.date })
+      await store.createTask({ ...payload, date: props.date } as Omit<Task, 'id'>)
     }
     emit('saved')
   } catch (e) {
@@ -187,6 +247,29 @@ async function save(event: MouseEvent) {
 }
 .type-btn:hover { border-color: var(--accent); color: var(--accent); }
 .type-btn.active { font-weight: 500; }
+
+.mode-toggle { display: flex; gap: 6px; }
+.mode-toggle-btn {
+  flex: 1; padding: 8px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--bg-primary);
+  font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+}
+.mode-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.mode-toggle-btn.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+
+.duration-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.duration-chip {
+  padding: 7px 12px; border-radius: 980px; border: 1px solid var(--border);
+  background: var(--bg-primary); font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+}
+.duration-chip:hover { border-color: var(--accent); color: var(--accent); }
+.duration-chip.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.duration-input {
+  width: 100%; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); font-size: 14px; color: var(--text-primary);
+  background: var(--bg-card); outline: none; box-sizing: border-box;
+}
+.duration-input:focus { border-color: var(--accent); }
 
 .status-row { display: flex; gap: 6px; }
 .status-btn {

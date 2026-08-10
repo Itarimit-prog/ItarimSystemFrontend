@@ -1,13 +1,26 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
+export type PlannerMode = 'full' | 'free' | 'mixed'
+
 export const useSettingsStore = defineStore('settings', () => {
   const isDark = ref(false)
+  const plannerMode = ref<PlannerMode>('full')
 
   function load() {
     const saved = localStorage.getItem('theme')
     isDark.value = saved === 'dark'
     apply()
+
+    const savedMode = localStorage.getItem('plannerMode')
+    if (savedMode === 'full' || savedMode === 'free' || savedMode === 'mixed') {
+      plannerMode.value = savedMode
+    }
+  }
+
+  function setPlannerMode(mode: PlannerMode) {
+    plannerMode.value = mode
+    localStorage.setItem('plannerMode', mode)
   }
 
   function toggle() {
@@ -33,5 +46,5 @@ export const useSettingsStore = defineStore('settings', () => {
   // auto-load on creation
   load()
 
-  return { isDark, toggle, setDark, load }
+  return { isDark, toggle, setDark, load, plannerMode, setPlannerMode }
 })

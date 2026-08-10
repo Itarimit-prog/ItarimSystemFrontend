@@ -26,16 +26,3 @@ document.addEventListener('keydown', async (e) => {
     }
   }
 })
-
-// Регистрация Service Worker для PWA
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered successfully:', registration.scope)
-      })
-      .catch((error) => {
-        console.log('SW registration failed:', error)
-      })
-  })
-}

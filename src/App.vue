@@ -18,14 +18,6 @@
         </RouterView>
       </main>
       <XpToast />
-
-      <!-- Toast обновления PWA -->
-      <Transition name="update-fade">
-        <div v-if="updateReady" class="update-toast" @click="applyUpdate">
-          <span class="update-text">🔄 Доступно обновление</span>
-          <span class="update-hint">Нажмите, чтобы перезагрузить</span>
-        </div>
-      </Transition>
     </template>
   </div>
 </template>
@@ -46,47 +38,6 @@ import { useXpToastStore } from '@/stores/xpToast'
 import { STAT_LABELS } from '@/types/profile'
 
 const initialLoading = ref(true)
-const updateReady = ref(false)
-let waitingWorker: ServiceWorker | null = null
-
-// Регистрация Service Worker + отслеживание обновлений
-onMounted(() => {
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    navigator.serviceWorker.register('/sw.js').then((reg) => {
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing
-        if (!newWorker) return
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Новый SW ждёт активации
-            updateReady.value = true
-            waitingWorker = newWorker
-          }
-        })
-      })
-    }).catch((err) => {
-      console.log('SW registration failed:', err)
-    })
-
-    // Также слушаем сообщения от SW
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'UPDATE_READY') {
-        updateReady.value = true
-      }
-    })
-  }
-})
-
-function applyUpdate() {
-  if (waitingWorker) {
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' })
-  }
-  updateReady.value = false
-  // Перезагружаем после небольшой задержки
-  setTimeout(() => {
-    window.location.reload()
-  }, 100)
-}
 
 onMounted(async () => {
   const plannerStore = usePlannerStore()
@@ -255,15 +206,6 @@ body {
   }
 }
 
-/* Страховка специально для PWA-режима (открыто с иконки на домашнем экране):
-   фон html/body в самом низу совпадает с цветом навбара,
-   чтобы никакой синий фон не мог просвечивать в зоне safe-area */
-@media (display-mode: standalone) and (max-width: 768px) {
-  html, body {
-    background: var(--bg-sidebar);
-  }
-}
-
 .safe-area-bar {
   display: none;
 }
@@ -321,48 +263,4 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.update-toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9998;
-  background: var(--accent);
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  transition: opacity 0.3s, transform 0.3s;
-}
-
-.update-hint {
-  font-size: 11px;
-  font-weight: 400;
-  opacity: 0.8;
-}
-
-.update-fade-enter-active,
-.update-fade-leave-active {
-  transition: opacity 0.3s, transform 0.3s;
-}
-
-.update-fade-enter-from,
-.update-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(-20px);
-}
-
-@media (max-width: 768px) {
-  .update-toast {
-    top: env(safe-area-inset-top, 20px);
-  }
-}
-
 </style>

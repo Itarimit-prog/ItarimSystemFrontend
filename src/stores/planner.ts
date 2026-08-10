@@ -33,9 +33,22 @@ export const usePlannerStore = defineStore('planner', () => {
   const datesWithTasks = ref<string[]>([])
   const loading = ref(false)
 
-  const sortedTasks = computed(() =>
-    [...tasks.value].sort((a, b) => a.time_start.localeCompare(b.time_start))
-  )
+  // Задачи с точным временем — сверху, по времени начала
+  function sortTimeline(list: Task[]): Task[] {
+    return list
+      .filter(t => !!t.time_start)
+      .sort((a, b) => a.time_start!.localeCompare(b.time_start!))
+  }
+  // Задачи-длительности (без точного времени) — снизу, в ручном порядке
+  function sortDuration(list: Task[]): Task[] {
+    return list
+      .filter(t => t.duration_minutes != null)
+      .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+  }
+
+  const timelineTasks = computed(() => sortTimeline(tasks.value))
+  const durationTasks = computed(() => sortDuration(tasks.value))
+  const sortedTasks = computed(() => [...timelineTasks.value, ...durationTasks.value])
 
   // Задачи за РЕАЛЬНОЕ сегодня — не зависит от того, какой день пользователь
   // сейчас листает в планере (selectedDate меняется при навигации по календарю,
@@ -43,7 +56,7 @@ export const usePlannerStore = defineStore('planner', () => {
   const todayTasks = computed(() => {
     const todayStr = formatDateLocal(new Date())
     const list = tasksCache.value[todayStr] ?? []
-    return [...list].sort((a, b) => a.time_start.localeCompare(b.time_start))
+    return [...sortTimeline(list), ...sortDuration(list)]
   })
 
   const stats = computed(() => ({
@@ -99,7 +112,15 @@ export const usePlannerStore = defineStore('planner', () => {
     }
   }
 
-  async function createTask(payload: Omit<Task, 'id'>) {
+  async function createTask(rawPayload: Omit<Task, 'id'>) {
+    let payload = rawPayload
+    if (payload.duration_minutes != null) {
+      // Новая задача-длительность встаёт в конец списка таких задач за день
+      const existing = (tasksCache.value[payload.date] ?? []).filter(t => t.duration_minutes != null)
+      const maxOrder = existing.reduce((m, t) => Math.max(m, t.order_index ?? -1), -1)
+      payload = { ...payload, order_index: maxOrder + 1 }
+    }
+
     // Optimistic: сразу в кэш и текущий список
     const tempId = 'temp-' + Date.now()
     const optimisticTask = { ...payload, id: tempId } as Task
@@ -250,6 +271,32 @@ export const usePlannerStore = defineStore('planner', () => {
     }
   }
 
+  async function reorderDurationTasks(date: string, orderedIds: string[]) {
+    const list = tasksCache.value[date]
+    if (!list) return
+    const oldList = list
+
+    const byId = new Map(list.map(t => [t.id, t]))
+    const reordered: Task[] = []
+    orderedIds.forEach((id, i) => {
+      const t = byId.get(id)
+      if (t) reordered.push({ ...t, order_index: i })
+    })
+    const others = list.filter(t => !orderedIds.includes(t.id))
+    const newList = [...others, ...reordered]
+
+    tasksCache.value[date] = newList
+    if (selectedDate.value === date) tasks.value = newList
+
+    try {
+      await Promise.all(reordered.map(t => tasksApi.update(t.id, { order_index: t.order_index })))
+    } catch (e) {
+      tasksCache.value[date] = oldList
+      if (selectedDate.value === date) tasks.value = oldList
+      throw e
+    }
+  }
+
   async function deleteTask(id: string) {
     const idx = tasks.value.findIndex(t => t.id === id)
     if (idx === -1) return
@@ -276,8 +323,9 @@ export const usePlannerStore = defineStore('planner', () => {
   }
 
   async function saveAsTemplate(name: string) {
-    const templateTasks = tasks.value.map(({ title, task_type, time_start, time_end }) => ({
-      title, task_type, time_start, time_end
+    // Шаблоны работают только с задачами с точным временем — задачи-длительности пропускаем
+    const templateTasks = timelineTasks.value.map(({ title, task_type, time_start, time_end }) => ({
+      title, task_type, time_start: time_start!, time_end: time_end!
     }))
     const tpl = await templatesApi.create({ name, tasks: templateTasks })
     templates.value.push(tpl)
@@ -300,9 +348,9 @@ export const usePlannerStore = defineStore('planner', () => {
 
   return {
     tasks, tasksCache, templates, selectedDate, datesWithTasks, loading,
-    sortedTasks, todayTasks, stats,
+    sortedTasks, timelineTasks, durationTasks, todayTasks, stats,
     loadTasks, loadWeekTasks, loadDatesWithTasks, loadTemplates, selectDate,
-    createTask, updateTask, updateTaskStatus, deleteTask,
+    createTask, updateTask, updateTaskStatus, deleteTask, reorderDurationTasks,
     saveAsTemplate, applyTemplate, deleteTemplate,
   }
 })

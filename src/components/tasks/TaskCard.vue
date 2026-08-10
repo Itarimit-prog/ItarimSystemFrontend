@@ -1,16 +1,17 @@
 <template>
   <div class="task-row">
-    <div class="time-col">
+    <div class="time-col" v-if="task.time_start">
       <span class="time-lbl">{{ task.time_start }}</span>
       <div class="time-line"></div>
     </div>
-    <div class="task-card" :style="cardStyle" @click="$emit('edit', task)">
+    <div class="task-card" :class="{ 'no-time-col': !task.time_start }" :style="cardStyle" @click="$emit('edit', task)">
       <div class="card-top">
         <span class="card-name" :style="{ color: meta.color }">{{ task.title }}</span>
         <button class="delete-btn" @click.stop="$emit('delete', task.id)">×</button>
       </div>
       <div class="card-meta">
-        <span class="time-range">{{ task.time_start }} – {{ task.time_end }}</span>
+        <span v-if="task.time_start" class="time-range">{{ task.time_start }} – {{ task.time_end }}</span>
+        <span v-else-if="task.duration_minutes" class="duration-badge">⏱ {{ formatDuration(task.duration_minutes) }}</span>
         <span class="badge" :style="{ background: meta.badgeBg, color: meta.badgeText }">
           {{ meta.label }}
         </span>
@@ -35,6 +36,14 @@ const store = usePlannerStore()
 
 const meta = computed(() => TASK_TYPE_META[props.task.task_type])
 const statusMeta = computed(() => STATUS_META[props.task.status])
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `${m} мин`
+  if (m === 0) return `${h} ч`
+  return `${h} ч ${m} мин`
+}
 
 const cardStyle = computed(() => ({
   background: meta.value.bg,
@@ -66,6 +75,7 @@ function cycleStatus() {
   transition: opacity 0.15s;
 }
 .task-card:hover { opacity: 0.85; }
+.task-card.no-time-col { border-radius: 14px; }
 
 .card-top { display: flex; align-items: center; justify-content: space-between; }
 .card-name { font-size: 14px; font-weight: 500; letter-spacing: -0.2px; }
@@ -80,6 +90,7 @@ function cycleStatus() {
 
 .card-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
 .time-range { font-size: 11px; color: var(--text-muted); }
+.duration-badge { font-size: 11px; color: var(--text-muted); }
 
 .badge {
   font-size: 10px; padding: 2px 8px;

@@ -39,7 +39,7 @@
                 <span v-if="t.task_type === 'workout'" class="task-badge" :style="{ background: TASK_TYPE_META.workout.badgeBg, color: TASK_TYPE_META.workout.badgeText }">
                   {{ routineName(t.routine_id) }}
                 </span>
-                <span class="task-time">{{ t.time_start }}</span>
+                <span class="task-time">{{ t.time_start ?? formatDuration(t.duration_minutes) }}</span>
               </div>
               <div v-if="todayTasks.length === 0" class="empty-mini">Нет рабочих/учебных дел и тренировок на сегодня</div>
             </div>
@@ -81,6 +81,15 @@ const checkedGoodCount = computed(() => goodHabits.value.filter(h => isChecked(h
 const todayTasks = computed(() =>
   allTodayTasks.value.filter(t => ['work', 'study', 'workout'].includes(t.task_type))
 )
+
+function formatDuration(minutes?: number | null): string {
+  if (!minutes) return ''
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `⏱ ${m} мин`
+  if (m === 0) return `⏱ ${h} ч`
+  return `⏱ ${h} ч ${m} мин`
+}
 
 function routineName(routineId?: string | null) {
   return routines.value.find(r => r.id === routineId)?.name ?? 'Тренировка'

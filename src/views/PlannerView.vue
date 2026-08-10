@@ -25,12 +25,29 @@
       </div>
 
       <TaskCard
-        v-for="task in sortedTasks"
+        v-for="task in timelineTasks"
         :key="task.id"
         :task="task"
         @edit="openEdit"
         @delete="deleteTask"
       />
+
+      <div v-if="durationTasks.length > 0" class="duration-block">
+        <div class="duration-block-label">Без точного времени</div>
+        <div
+          v-for="(task, i) in durationTasks" :key="task.id"
+          class="duration-drag-item"
+          draggable="true"
+          @dragstart="onDragStart(i)"
+          @dragover.prevent="onDragOver(i)"
+          @drop.prevent="onDrop(i)"
+          @dragend="onDragEnd"
+          :class="{ dragging: dragIndex === i, 'drag-over': dragOverIndex === i && dragIndex !== i }"
+        >
+          <span class="drag-handle">⠿</span>
+          <TaskCard :task="task" @edit="openEdit" @delete="deleteTask" />
+        </div>
+      </div>
     </div>
 
     <div class="right-panel">
@@ -105,8 +122,27 @@ import type { Task } from '@/types'
 
 const store = usePlannerStore()
 const kanbanStore = useKanbanStore()
-const { sortedTasks, stats, selectedDate, loading, templates } = storeToRefs(store)
+const { sortedTasks, timelineTasks, durationTasks, stats, selectedDate, loading, templates } = storeToRefs(store)
 const { boards, cards, columns } = storeToRefs(kanbanStore)
+
+const dragIndex = ref<number | null>(null)
+const dragOverIndex = ref<number | null>(null)
+
+function onDragStart(i: number) { dragIndex.value = i }
+function onDragOver(i: number) { dragOverIndex.value = i }
+function onDrop(i: number) {
+  if (dragIndex.value === null || dragIndex.value === i) return
+  const ids = durationTasks.value.map(t => t.id)
+  const [moved] = ids.splice(dragIndex.value, 1)
+  ids.splice(i, 0, moved)
+  store.reorderDurationTasks(selectedDate.value, ids)
+  dragIndex.value = null
+  dragOverIndex.value = null
+}
+function onDragEnd() {
+  dragIndex.value = null
+  dragOverIndex.value = null
+}
 
 const showTaskModal = ref(false)
 const showTemplateModal = ref(false)
@@ -129,9 +165,13 @@ const dayLabel = computed(() => {
 const totalHours = computed(() => {
   let total = 0
   for (const t of sortedTasks.value) {
-    const [sh, sm] = t.time_start.split(':').map(Number)
-    const [eh, em] = t.time_end.split(':').map(Number)
-    total += (eh * 60 + em) - (sh * 60 + sm)
+    if (t.time_start && t.time_end) {
+      const [sh, sm] = t.time_start.split(':').map(Number)
+      const [eh, em] = t.time_end.split(':').map(Number)
+      total += (eh * 60 + em) - (sh * 60 + sm)
+    } else if (t.duration_minutes) {
+      total += t.duration_minutes
+    }
   }
   return Math.round(total / 60 * 10) / 10
 })
@@ -270,6 +310,23 @@ async function deleteTemplate(id: string) { await store.deleteTemplate(id) }
   padding: 40px 0; line-height: 1.6;
 }
 .empty-hint { font-size: 12px; color: var(--text-muted); }
+
+.duration-block { margin-top: 18px; }
+.duration-block-label {
+  font-size: 11px; font-weight: 500; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;
+}
+.duration-drag-item {
+  display: flex; align-items: flex-start; gap: 6px;
+  border-radius: 14px; transition: opacity 0.15s, background 0.15s;
+}
+.duration-drag-item .task-card { flex: 1; }
+.drag-handle {
+  cursor: grab; color: var(--text-muted); font-size: 14px;
+  padding: 10px 0 0 2px; user-select: none; flex-shrink: 0;
+}
+.duration-drag-item.dragging { opacity: 0.4; }
+.duration-drag-item.drag-over { background: var(--accent-light); }
 
 .deadlines-block {
   margin-top: 14px;

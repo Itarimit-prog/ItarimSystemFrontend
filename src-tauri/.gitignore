@@ -2,6 +2,10 @@
 target/
 **/*.rs.lock
 
+# Sidecar-бинарь (собирается локально через backend/build_sidecar.sh,
+# платформо-зависимый — не коммитим)
+binaries/
+
 # Icons (сгенерированные)
 icons/*
 !icons/README.md
