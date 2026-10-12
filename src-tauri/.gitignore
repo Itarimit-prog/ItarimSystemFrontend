@@ -6,6 +6,4 @@ target/
 # платформо-зависимый — не коммитим)
 binaries/
 
-# Icons (сгенерированные)
-icons/*
-!icons/README.md
+.DS_Store
