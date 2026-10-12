@@ -37,6 +37,7 @@ import { useRoadmapStore } from '@/stores/roadmap'
 import { useGoalsStore } from '@/stores/goals'
 import { useAchievementsStore } from '@/stores/achievements'
 import { useSettingsStore } from '@/stores/settings'
+import { useDashboardStore } from '@/stores/dashboard'
 
 const initialLoading = ref(true)
 
@@ -66,6 +67,7 @@ onMounted(async () => {
       goalsStore.loadAll(),
       achievementsStore.loadAll(),
       useSettingsStore().syncFromServer(),
+      useDashboardStore().syncFromServer(),
     ])
   } catch (e) {
     console.error('Ошибка начальной загрузки:', e)
