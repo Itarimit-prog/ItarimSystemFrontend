@@ -12,13 +12,29 @@ export interface Task {
   order_index?: number | null       // ручной порядок среди задач-длительностей
   date: string        // "YYYY-MM-DD"
   routine_id?: string | null  // для task_type='workout' — какая тренировка запланирована
+  recurring_id?: string | null  // если задача создана по правилу повторения
 }
+
+export interface RecurringRule {
+  id: string
+  title: string
+  task_type: TaskType
+  time_start?: string | null
+  time_end?: string | null
+  duration_minutes?: number | null
+  routine_id?: string | null
+  days: number[]  // 0 = понедельник ... 6 = воскресенье
+  start_date: string
+}
+
+export const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
 export interface TemplateTaskItem {
   title: string
   task_type: TaskType
-  time_start: string
-  time_end: string
+  time_start?: string | null
+  time_end?: string | null
+  duration_minutes?: number | null
 }
 
 export interface Template {

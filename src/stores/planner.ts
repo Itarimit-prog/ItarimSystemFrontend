@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { tasksApi, templatesApi } from '@/api'
+import { tasksApi, templatesApi, recurringApi, type RecurringPayload } from '@/api'
 import { useXpToastStore } from '@/stores/xpToast'
-import type { Task, Template, TaskStatus } from '@/types'
+import type { Task, Template, TaskStatus, RecurringRule } from '@/types'
 
 function formatDateLocal(date: Date): string {
   const y = date.getFullYear()
@@ -29,6 +29,7 @@ export const usePlannerStore = defineStore('planner', () => {
   const tasks = ref<Task[]>([])
   const tasksCache = ref<Record<string, Task[]>>({}) // кэш задач по датам
   const templates = ref<Template[]>([])
+  const recurringRules = ref<RecurringRule[]>([])
   const selectedDate = ref<string>(formatDateLocal(new Date()))
   const datesWithTasks = ref<string[]>([])
   const loading = ref(false)
@@ -97,6 +98,34 @@ export const usePlannerStore = defineStore('planner', () => {
 
   async function loadDatesWithTasks() {
     datesWithTasks.value = await tasksApi.getDatesWithTasks()
+  }
+
+  async function loadRecurring() {
+    recurringRules.value = await recurringApi.getAll()
+  }
+
+  // Правила повторения меняют задачи на много дней вперёд — проще перечитать всё, чем чинить кэш
+  async function refreshAfterRecurringChange() {
+    tasksCache.value = {}
+    await loadRecurring()
+    await loadWeekTasks()
+    await loadTasks(selectedDate.value)
+    await loadDatesWithTasks()
+  }
+
+  async function createRecurring(payload: RecurringPayload, linkTaskId?: string) {
+    await recurringApi.create({ ...payload, ...(linkTaskId ? { link_task_id: linkTaskId } : {}) })
+    await refreshAfterRecurringChange()
+  }
+
+  async function updateRecurring(id: string, payload: Partial<RecurringPayload>) {
+    await recurringApi.update(id, payload)
+    await refreshAfterRecurringChange()
+  }
+
+  async function deleteRecurring(id: string) {
+    await recurringApi.delete(id)
+    await refreshAfterRecurringChange()
   }
 
   async function loadTemplates() {
@@ -323,10 +352,11 @@ export const usePlannerStore = defineStore('planner', () => {
   }
 
   async function saveAsTemplate(name: string) {
-    // Шаблоны работают только с задачами с точным временем — задачи-длительности пропускаем
-    const templateTasks = timelineTasks.value.map(({ title, task_type, time_start, time_end }) => ({
-      title, task_type, time_start: time_start!, time_end: time_end!
-    }))
+    const templateTasks = sortedTasks.value.map(({ title, task_type, time_start, time_end, duration_minutes }) => (
+      duration_minutes != null
+        ? { title, task_type, duration_minutes }
+        : { title, task_type, time_start, time_end }
+    ))
     const tpl = await templatesApi.create({ name, tasks: templateTasks })
     templates.value.push(tpl)
   }
@@ -347,9 +377,10 @@ export const usePlannerStore = defineStore('planner', () => {
   }
 
   return {
-    tasks, tasksCache, templates, selectedDate, datesWithTasks, loading,
+    tasks, tasksCache, templates, recurringRules, selectedDate, datesWithTasks, loading,
     sortedTasks, timelineTasks, durationTasks, todayTasks, stats,
     loadTasks, loadWeekTasks, loadDatesWithTasks, loadTemplates, selectDate,
+    loadRecurring, createRecurring, updateRecurring, deleteRecurring,
     createTask, updateTask, updateTaskStatus, deleteTask, reorderDurationTasks,
     saveAsTemplate, applyTemplate, deleteTemplate,
   }

@@ -34,8 +34,9 @@ import { useWorkoutsStore } from '@/stores/workouts'
 import { useFinancesStore } from '@/stores/finances'
 import { useProfileStore } from '@/stores/profile'
 import { useRoadmapStore } from '@/stores/roadmap'
-import { useXpToastStore } from '@/stores/xpToast'
-import { STAT_LABELS } from '@/types/profile'
+import { useGoalsStore } from '@/stores/goals'
+import { useAchievementsStore } from '@/stores/achievements'
+import { useSettingsStore } from '@/stores/settings'
 
 const initialLoading = ref(true)
 
@@ -47,40 +48,30 @@ onMounted(async () => {
   const financesStore = useFinancesStore()
   const profileStore = useProfileStore()
   const roadmapStore = useRoadmapStore()
-  const xpToast = useXpToastStore()
+  const goalsStore = useGoalsStore()
+  const achievementsStore = useAchievementsStore()
 
   try {
     await Promise.all([
       plannerStore.loadWeekTasks(),
       plannerStore.loadDatesWithTasks(),
       plannerStore.loadTemplates(),
+      plannerStore.loadRecurring(),
       kanbanStore.loadAll(),
       habitsStore.loadAll(),
       workoutsStore.loadAll(),
       financesStore.loadAll(),
       profileStore.loadAll(),
       roadmapStore.loadAll(),
+      goalsStore.loadAll(),
+      achievementsStore.loadAll(),
+      useSettingsStore().syncFromServer(),
     ])
   } catch (e) {
     console.error('Ошибка начальной загрузки:', e)
   } finally {
     initialLoading.value = false
   }
-
-  // Проверяем достижения в фоне после загрузки UI
-  profileStore.checkAchievements().then(events => {
-    if (events && events.length > 0) {
-      for (const ev of events) {
-        xpToast.show({
-          xp: ev.xp_gained,
-          statKey: ev.stat_gained ?? undefined,
-          statLabel: ev.stat_gained ? (STAT_LABELS as any)[ev.stat_gained] : undefined,
-        })
-      }
-    }
-  }).catch(err => {
-    console.error('Ошибка автопроверки достижений:', err)
-  })
 })
 </script>
 

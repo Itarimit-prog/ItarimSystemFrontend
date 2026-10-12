@@ -76,6 +76,18 @@
         </div>
 
         <div class="field">
+          <label>Повторять по дням</label>
+          <div class="repeat-row">
+            <button
+              v-for="(label, i) in WEEKDAY_LABELS" :key="i"
+              type="button" class="day-chip" :class="{ active: repeatDays.includes(i) }"
+              @click="toggleDay(i)"
+            >{{ label }}</button>
+          </div>
+          <div class="repeat-hint">{{ repeatHint }}</div>
+        </div>
+
+        <div class="field">
           <label>Статус</label>
           <div class="status-row">
             <button v-for="(meta, key) in STATUS_META" :key="key"
@@ -108,7 +120,7 @@
 import { reactive, computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { Task, TaskType, TaskStatus } from '@/types'
-import { TASK_TYPE_META, STATUS_META } from '@/types'
+import { TASK_TYPE_META, STATUS_META, WEEKDAY_LABELS } from '@/types'
 import { usePlannerStore } from '@/stores/planner'
 import { useWorkoutsStore } from '@/stores/workouts'
 import { useSettingsStore } from '@/stores/settings'
@@ -149,6 +161,25 @@ const form = reactive({
   routine_id: props.task?.routine_id ?? '',
 })
 
+const existingRule = computed(() =>
+  props.task?.recurring_id ? store.recurringRules.find(r => r.id === props.task!.recurring_id) ?? null : null
+)
+const repeatDays = ref<number[]>([...(existingRule.value?.days ?? [])])
+
+function toggleDay(i: number) {
+  repeatDays.value = repeatDays.value.includes(i)
+    ? repeatDays.value.filter(d => d !== i)
+    : [...repeatDays.value, i].sort()
+}
+
+const repeatHint = computed(() => {
+  if (repeatDays.value.length === 0) {
+    return existingRule.value ? 'Снимите все дни, чтобы убрать повторение' : 'Не повторяется — задача только на этот день'
+  }
+  if (repeatDays.value.length === 7) return 'Каждый день'
+  return 'Будет создаваться в: ' + repeatDays.value.map(d => WEEKDAY_LABELS[d]).join(', ')
+})
+
 // Если сменили тип на "Тренировка" и роутин ещё не выбран — подставляем первый доступный
 watch(() => form.task_type, (type) => {
   if (type === 'workout' && !form.routine_id && routines.value.length > 0) {
@@ -180,9 +211,29 @@ async function save(event: MouseEvent) {
     payload.order_index = null
   }
 
+  const ruleFields = () => ({
+    title: form.title,
+    task_type: form.task_type,
+    time_start: payload.time_start ?? null,
+    time_end: payload.time_end ?? null,
+    duration_minutes: payload.duration_minutes ?? null,
+    routine_id: payload.routine_id ?? null,
+  })
+
   try {
     if (isEdit.value && props.task) {
       await store.updateTask(props.task.id, payload)
+      if (existingRule.value) {
+        if (repeatDays.value.length === 0) await store.deleteRecurring(existingRule.value.id)
+        else await store.updateRecurring(existingRule.value.id, { ...ruleFields(), days: repeatDays.value })
+      } else if (repeatDays.value.length > 0) {
+        await store.createRecurring(
+          { ...ruleFields(), days: repeatDays.value, start_date: props.date },
+          props.task.id,
+        )
+      }
+    } else if (repeatDays.value.length > 0) {
+      await store.createRecurring({ ...ruleFields(), days: repeatDays.value, start_date: props.date })
     } else {
       await store.createTask({ ...payload, date: props.date } as Omit<Task, 'id'>)
     }
@@ -270,6 +321,16 @@ async function save(event: MouseEvent) {
   background: var(--bg-card); outline: none; box-sizing: border-box;
 }
 .duration-input:focus { border-color: var(--accent); }
+
+.repeat-row { display: flex; gap: 5px; }
+.day-chip {
+  flex: 1; padding: 7px 0; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--bg-primary); font-size: 12px; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.15s;
+}
+.day-chip:hover { border-color: var(--accent); color: var(--accent); }
+.day-chip.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.repeat-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
 .status-row { display: flex; gap: 6px; }
 .status-btn {

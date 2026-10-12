@@ -11,23 +11,6 @@ export interface PlayerProfile {
   stats: Stat[]
 }
 
-export interface Achievement {
-  code: string
-  title: string
-  description: string
-  icon: string
-  stat_key: string | null
-  xp_reward: number
-  unlocked_at: string
-}
-
-export interface AchievementUnlockEvent {
-  achievement: Achievement
-  xp_gained: number
-  stat_gained: string | null
-  stat_xp_gained: number
-}
-
 export const STAT_LABELS: Record<string, string> = {
   strength: 'Сила',
   health: 'Здоровье',

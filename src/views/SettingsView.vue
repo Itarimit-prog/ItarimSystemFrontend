@@ -53,7 +53,7 @@
       <div class="setting-card">
         <div class="setting-row">
           <span class="setting-name">Версия</span>
-          <span class="setting-value">1.0.0</span>
+          <span class="setting-value">{{ appVersion }}</span>
         </div>
       </div>
     </div>
@@ -83,6 +83,7 @@ import { useSettingsStore, type PlannerMode } from '@/stores/settings'
 import { systemApi } from '@/api'
 
 const settings = useSettingsStore()
+const appVersion = __APP_VERSION__
 
 const plannerModeOptions: { value: PlannerMode; label: string }[] = [
   { value: 'full', label: 'Полный контроль' },
@@ -112,7 +113,12 @@ async function handleReset() {
     // Сначала реально удаляем все данные на сервере — иначе диалог
     // обещает безвозвратное удаление, а на деле ничего не стирает
     await systemApi.resetAll()
+    // Тему и режим планера оставляем — это настройки интерфейса, а не данные
+    const theme = localStorage.getItem('theme')
+    const plannerMode = localStorage.getItem('plannerMode')
     localStorage.clear()
+    if (theme) localStorage.setItem('theme', theme)
+    if (plannerMode) localStorage.setItem('plannerMode', plannerMode)
     showResetConfirm.value = false
     // Небольшая задержка чтобы пользователь увидел закрытие модала
     setTimeout(() => {
@@ -202,7 +208,9 @@ async function handleReset() {
 /* Planner mode */
 .planner-mode-row {
   flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 8px;
+  margin-bottom: 4px;
 }
 .mode-btn {
   padding: 7px 14px; border-radius: 980px; border: 1px solid var(--border);

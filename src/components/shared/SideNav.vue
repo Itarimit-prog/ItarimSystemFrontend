@@ -41,12 +41,18 @@ import {
   IconWallet,
   IconSettings,
   IconUser,
+  IconTarget,
+  IconRoute,
+  IconTrophy,
 } from '@tabler/icons-vue'
 
 const navItems = [
   { to: '/',          icon: IconLayoutDashboard, label: 'Дашборд' },
   { to: '/planner',  icon: IconCalendarWeek, label: 'Планировщик' },
   { to: '/habits',   icon: IconRepeat,        label: 'Привычки' },
+  { to: '/goals',    icon: IconTarget,        label: 'Цели' },
+  { to: '/achievements', icon: IconTrophy,   label: 'Достижения' },
+  { to: '/roadmaps', icon: IconRoute,         label: 'Роадмапы' },
   { to: '/kanban',   icon: IconLayoutKanban,  label: 'Канбан' },
   { to: '/workouts', icon: IconBarbell,       label: 'Тренировки' },
   { to: '/finance',  icon: IconWallet,        label: 'Финансы' },

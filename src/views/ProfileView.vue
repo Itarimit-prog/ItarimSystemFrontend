@@ -70,54 +70,12 @@
         </div>
       </div>
 
-      <!-- ── Достижения ── -->
-      <div class="section-label">
-        Достижения
-        <span class="ach-count">{{ achievements.length }}</span>
-      </div>
-
-      <div v-if="achievements.length === 0" class="empty-ach">
-        Пока нет достижений. Выполняйте задачи, привычки и тренировки!
-      </div>
-
-      <div v-else class="ach-grid">
-        <div
-          v-for="ach in achievements"
-          :key="ach.code"
-          class="ach-card"
-        >
-          <span class="ach-icon">{{ ach.icon }}</span>
-          <div class="ach-info">
-            <div class="ach-title">{{ ach.title }}</div>
-            <div class="ach-desc">{{ ach.description }}</div>
-            <div class="ach-reward">+{{ ach.xp_reward }} XP</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Уведомление о новых достижениях ── -->
-      <Transition name="fade">
-        <div v-if="newUnlocks.length > 0" class="unlock-overlay" @click="dismissUnlocks">
-          <div class="unlock-toast">
-            <div class="unlock-label">🎉 Новое достижение!</div>
-            <div v-for="ev in newUnlocks" :key="ev.achievement.code" class="unlock-item">
-              <span class="unlock-icon">{{ ev.achievement.icon }}</span>
-              <div class="unlock-text">
-                <div class="unlock-title">{{ ev.achievement.title }}</div>
-                <span class="unlock-xp">+{{ ev.xp_gained }} XP</span>
-              </div>
-            </div>
-            <div class="unlock-hint">Нажмите, чтобы закрыть</div>
-          </div>
-        </div>
-      </Transition>
-
       <!-- ── Подтверждение сброса ── -->
       <Teleport to="body" v-if="showResetConfirm">
         <div class="overlay" @click.self="showResetConfirm = false">
           <div class="confirm-modal">
             <h3>Сбросить прогресс?</h3>
-            <p>Все уровни, XP и достижения будут обнулены. Это действие нельзя отменить.</p>
+            <p>Все уровни и XP будут обнулены. Это действие нельзя отменить.</p>
             <div class="confirm-actions">
               <button class="btn-cancel" @click="showResetConfirm = false">Отмена</button>
               <button class="btn-danger" @click="handleReset" :disabled="loading">
@@ -140,7 +98,7 @@ import { STAT_LABELS, STAT_ICONS, STAT_COLORS } from '@/types/profile'
 import type { Stat } from '@/types/profile'
 
 const store = useProfileStore()
-const { profile, achievements, loading, newUnlocks } = storeToRefs(store)
+const { profile, loading } = storeToRefs(store)
 
 const showResetConfirm = ref(false)
 
@@ -191,7 +149,6 @@ async function handleRecalculate() {
   loading.value = true
   try {
     await store.recalculate()
-    await store.checkAchievements()
   } catch (err) {
     console.error('Ошибка пересчёта:', err)
   } finally {
@@ -208,9 +165,6 @@ async function handleReset() {
   }
 }
 
-function dismissUnlocks() {
-  store.clearNewUnlocks()
-}
 </script>
 
 <style scoped>
@@ -295,9 +249,6 @@ function dismissUnlocks() {
   display: flex; align-items: center; gap: 8px;
   padding: 0 4px;
 }
-.ach-count {
-  font-size: 11px; font-weight: 400; color: var(--text-muted);
-}
 
 /* Stats Grid */
 .stats-grid {
@@ -328,64 +279,6 @@ function dismissUnlocks() {
   font-size: 10px; color: var(--text-muted); margin-top: 5px;
   text-align: right;
 }
-
-/* Achievements */
-.ach-grid {
-  display: flex; flex-direction: column; gap: 8px;
-}
-.ach-card {
-  background: var(--bg-card); border-radius: 14px;
-  padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;
-  box-shadow: 0 1px 6px rgba(26,122,232,0.06);
-}
-.ach-icon { font-size: 28px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
-.ach-info { flex: 1; min-width: 0; }
-.ach-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.ach-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.ach-reward {
-  font-size: 10px; color: var(--accent); font-weight: 600;
-  margin-top: 4px; display: inline-block;
-  background: var(--accent-light); padding: 2px 7px; border-radius: 6px;
-}
-
-.empty-ach {
-  font-size: 13px; color: var(--text-muted); text-align: center;
-  padding: 32px 20px;
-  border: 0.5px dashed var(--border); border-radius: 16px;
-  background: var(--bg-card);
-}
-
-/* Unlock overlay */
-.unlock-overlay {
-  position: fixed; inset: 0;
-  background: rgba(10,30,53,0.55);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; cursor: pointer;
-}
-.unlock-toast {
-  background: var(--bg-card); border-radius: 24px;
-  padding: 28px 36px; max-width: 320px; width: 90%;
-  text-align: center;
-  box-shadow: 0 8px 40px rgba(26,122,232,0.25);
-}
-.unlock-label {
-  font-size: 14px; font-weight: 600; color: var(--accent);
-  margin-bottom: 16px;
-}
-.unlock-item {
-  display: flex; align-items: flex-start; gap: 10px;
-  text-align: left; margin-bottom: 12px;
-}
-.unlock-icon { font-size: 28px; flex-shrink: 0; line-height: 1.3; }
-.unlock-text { flex: 1; min-width: 0; }
-.unlock-title { font-size: 14px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
-.unlock-xp { font-size: 11px; color: var(--success); font-weight: 600; display: inline-block; margin-top: 3px; }
-.unlock-hint {
-  font-size: 11px; color: var(--text-muted); margin-top: 14px;
-}
-
-.fade-enter-active, .fade-leave-active { transition: opacity 0.25s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* Confirm modal */
 .overlay {

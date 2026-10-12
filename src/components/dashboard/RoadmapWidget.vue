@@ -10,6 +10,7 @@
         >{{ r.name }}</button>
         <button class="rm-pill new" @click="createNewRoadmap">+</button>
       </div>
+      <RouterLink v-if="activeRoadmap" class="rm-edit-btn" :to="{ path: '/roadmaps', query: { id: activeRoadmap.id } }" title="Открыть на холсте">⤢</RouterLink>
       <button v-if="activeRoadmap" class="rm-edit-btn" :class="{ active: editing }" @click="editing = !editing" title="Редактировать этапы">
         <IconPencil size="14" stroke="1.5" />
       </button>
@@ -93,6 +94,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useRoadmapStore } from '@/stores/roadmap'
 import { IconPencil } from '@tabler/icons-vue'
@@ -204,7 +206,7 @@ async function submitNewStep() {
 .rm-edit-btn {
   width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border);
   background: none; color: var(--text-muted); cursor: pointer; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px;
 }
 .rm-edit-btn:hover, .rm-edit-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 

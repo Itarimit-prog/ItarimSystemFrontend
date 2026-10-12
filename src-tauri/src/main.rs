@@ -45,18 +45,16 @@ fn main() {
         .manage(SidecarState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![force_reload])
         .setup(|app| {
-            // Очистка кэша WebView при каждом запуске
-            if let Ok(cache_dir) = app.path().app_cache_dir() {
-                if cache_dir.exists() {
-                    let _ = std::fs::remove_dir_all(&cache_dir);
-                }
+            // Папку ~/Library/WebKit/<identifier> не трогаем: там лежит localStorage
+            // (тема, режим планера). Статика зашита в сборку, чистить кэш незачем.
+
+            // Если от прошлого запуска остался «осиротевший» бэкенд (например, после Cmd+Q),
+            // он держит порт со старым кодом — завершаем его до старта нового
+            #[cfg(unix)]
+            {
+                let _ = std::process::Command::new("pkill").args(["-f", "itarim-backend"]).status();
+                std::thread::sleep(Duration::from_millis(400));
             }
-            // WKWebView хранит кэш в ~/Library/WebKit/<identifier>
-            let home = std::env::var("HOME").unwrap_or_default();
-            let webkit_cache = format!("{}/Library/WebKit/com.itarim.system", home);
-            let caches_dir = format!("{}/Library/Caches/com.itarim.system", home);
-            let _ = std::fs::remove_dir_all(&webkit_cache);
-            let _ = std::fs::remove_dir_all(&caches_dir);
 
             // Локальная БД живёт в app data dir — переживает обновления приложения
             let data_dir = app
@@ -99,6 +97,14 @@ fn main() {
                 }
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Cmd+Q и другие способы выйти без закрытия окна тоже должны гасить бэкенд
+            if let tauri::RunEvent::Exit = event {
+                if let Some(child) = app_handle.state::<SidecarState>().0.lock().unwrap().take() {
+                    let _ = child.kill();
+                }
+            }
+        });
 }

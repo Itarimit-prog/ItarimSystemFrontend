@@ -15,6 +15,7 @@
         <span class="badge" :style="{ background: meta.badgeBg, color: meta.badgeText }">
           {{ meta.label }}
         </span>
+        <span v-if="task.recurring_id" class="repeat-mark" title="Повторяющаяся задача">↻</span>
         <span class="status-pill" :style="{ background: statusMeta.bg, color: statusMeta.color }"
           @click.stop="cycleStatus">
           {{ statusMeta.label }}
@@ -90,6 +91,7 @@ function cycleStatus() {
 
 .card-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
 .time-range { font-size: 11px; color: var(--text-muted); }
+.repeat-mark { font-size: 12px; color: var(--text-muted); }
 .duration-badge { font-size: 11px; color: var(--text-muted); }
 
 .badge {

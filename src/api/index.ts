@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Task, Template } from '@/types'
+import type { Task, Template, RecurringRule } from '@/types'
 import type { Exercise, UserProfile, Routine, RoutineExercise, RoutineExerciseCreate } from '@/types/workouts_models'
 import type { WorkoutLog } from '@/types/workouts'
 import type { Transaction, Debt, Balance, MonthArchiveEntry } from '@/types/finances'
@@ -7,7 +7,7 @@ import type { Transaction, Debt, Balance, MonthArchiveEntry } from '@/types/fina
 // Бэкенд теперь всегда локальный: в Tauri-сборке это sidecar-процесс,
 // запускаемый main.rs на этом порту; при обычной веб-разработке (npm run dev)
 // это локально запущенный uvicorn на том же порту.
-const LOCAL_API_URL = 'http://127.0.0.1:8420'
+const LOCAL_API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8420'
 
 const api = axios.create({
   baseURL: LOCAL_API_URL,
@@ -49,6 +49,22 @@ export const templatesApi = {
 
   delete: (id: string) =>
     api.delete(`/templates/${id}`),
+}
+
+export type RecurringPayload = Omit<RecurringRule, 'id'>
+
+export const recurringApi = {
+  getAll: () =>
+    api.get<RecurringRule[]>('/recurring/').then(r => r.data),
+
+  create: (payload: RecurringPayload & { link_task_id?: string }) =>
+    api.post<RecurringRule>('/recurring/', payload).then(r => r.data),
+
+  update: (id: string, payload: Partial<RecurringPayload>) =>
+    api.patch<RecurringRule>(`/recurring/${id}`, payload).then(r => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/recurring/${id}`),
 }
 
 export const workoutsApi = {
