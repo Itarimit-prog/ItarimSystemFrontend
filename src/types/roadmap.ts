@@ -4,8 +4,14 @@ export interface RoadmapStep {
   position: number
   x: number
   y: number
-  parent_step_id?: string | null
   done: boolean
+  color?: string | null
+}
+
+export interface RoadmapEdge {
+  id: string
+  from_id: string
+  to_id: string
 }
 
 export interface Roadmap {
@@ -15,4 +21,5 @@ export interface Roadmap {
   current_step_id?: string | null
   goal_id?: string | null
   steps: RoadmapStep[]
+  edges: RoadmapEdge[]
 }

@@ -46,7 +46,7 @@ export const useRoadmapStore = defineStore('roadmap', () => {
 
   async function addStep(
     roadmapId: string, label: string,
-    opts: { parent_step_id?: string | null; x?: number; y?: number } = {},
+    opts: { parent_step_id?: string | null; x?: number; y?: number; color?: string | null } = {},
   ) {
     const updated = await roadmapApi.addStep(roadmapId, label, opts)
     roadmaps.value = roadmaps.value.map(r => r.id === roadmapId ? updated : r)
@@ -82,19 +82,30 @@ export const useRoadmapStore = defineStore('roadmap', () => {
     await roadmapApi.deleteStep(stepId)
     const roadmap = roadmaps.value.find(r => r.id === roadmapId)
     if (roadmap) {
-      const removed = roadmap.steps.find(s => s.id === stepId)
-      // Бэкенд переподвешивает детей к родителю удалённого узла — повторяем локально
-      for (const s of roadmap.steps) {
-        if (s.parent_step_id === stepId) s.parent_step_id = removed?.parent_step_id ?? null
-      }
       roadmap.steps = roadmap.steps.filter(s => s.id !== stepId)
+      // Бэкенд удаляет и все стрелки удалённого этапа — повторяем локально
+      roadmap.edges = roadmap.edges.filter(e => e.from_id !== stepId && e.to_id !== stepId)
       if (roadmap.current_step_id === stepId) roadmap.current_step_id = null
     }
+  }
+
+  async function addEdge(roadmapId: string, fromId: string, toId: string) {
+    const roadmap = roadmaps.value.find(r => r.id === roadmapId)
+    if (!roadmap || fromId === toId) return
+    if (roadmap.edges.some(e => e.from_id === fromId && e.to_id === toId)) return
+    const edge = await roadmapApi.addEdge(roadmapId, fromId, toId)
+    roadmap.edges.push(edge)
+  }
+
+  async function deleteEdge(roadmapId: string, edgeId: string) {
+    await roadmapApi.deleteEdge(edgeId)
+    const roadmap = roadmaps.value.find(r => r.id === roadmapId)
+    if (roadmap) roadmap.edges = roadmap.edges.filter(e => e.id !== edgeId)
   }
 
   return {
     roadmaps, activeRoadmapId, loading,
     loadAll, selectRoadmap, createRoadmap, renameRoadmap, deleteRoadmap,
-    setCurrentStep, addStep, updateStep, renameStep, deleteStep,
+    setCurrentStep, addStep, updateStep, renameStep, deleteStep, addEdge, deleteEdge,
   }
 })

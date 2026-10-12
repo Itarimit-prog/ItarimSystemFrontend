@@ -29,26 +29,18 @@
       </div>
 
       <div class="rm-steps-v">
-        <div
-          class="rm-step-v"
-          v-for="(step, i) in activeRoadmap.steps" :key="step.id"
-          :class="{ done: i < currentIndex, current: step.id === activeRoadmap.current_step_id }"
-        >
-          <div class="rm-dot-col">
-            <div class="rm-dot-v" @click="!editing && setCurrent(step.id)"></div>
-            <div class="rm-connector" v-if="i < activeRoadmap.steps.length - 1"></div>
-          </div>
-          <div class="rm-step-content">
-            <span class="rm-you" v-if="step.id === activeRoadmap.current_step_id">Ты тут</span>
-            <input
-              v-if="editing"
-              class="rm-step-input"
-              :value="step.label"
-              @change="renameStep(step.id, $event)"
-            />
-            <span v-else class="rm-label-v" @click="setCurrent(step.id)">{{ step.label }}</span>
-            <button v-if="editing" class="rm-step-del" @click="deleteStep(step.id)">×</button>
-          </div>
+        <div class="rm-step-v" v-for="step in activeRoadmap.steps" :key="step.id" :class="{ done: step.done }">
+          <button class="rm-check" :class="{ on: step.done }" @click="!editing && toggleDone(step)" :disabled="editing">
+            <span v-if="step.done">✓</span>
+          </button>
+          <input
+            v-if="editing"
+            class="rm-step-input"
+            :value="step.label"
+            @change="renameStep(step.id, $event)"
+          />
+          <span v-else class="rm-label-v" @click="toggleDone(step)">{{ step.label }}</span>
+          <button v-if="editing" class="rm-step-del" @click="deleteStep(step.id)">×</button>
         </div>
       </div>
 
@@ -112,12 +104,7 @@ const showDeleteConfirm = ref(false)
 
 const activeRoadmap = computed(() => roadmaps.value.find(r => r.id === activeRoadmapId.value) ?? null)
 
-const currentIndex = computed(() => {
-  if (!activeRoadmap.value?.current_step_id) return -1
-  return activeRoadmap.value.steps.findIndex(s => s.id === activeRoadmap.value!.current_step_id)
-})
-
-const doneCount = computed(() => currentIndex.value >= 0 ? currentIndex.value + 1 : 0)
+const doneCount = computed(() => activeRoadmap.value?.steps.filter(s => s.done).length ?? 0)
 
 function createNewRoadmap() {
   newRoadmapName.value = ''
@@ -148,12 +135,12 @@ async function deleteActiveRoadmap() {
   }
 }
 
-async function setCurrent(stepId: string) {
+async function toggleDone(step: { id: string; done: boolean }) {
   if (!activeRoadmap.value) return
   try {
-    await store.setCurrentStep(activeRoadmap.value.id, stepId)
+    await store.updateStep(activeRoadmap.value.id, step.id, { done: !step.done })
   } catch (e) {
-    console.error('Ошибка обновления текущего этапа:', e)
+    console.error('Ошибка обновления этапа:', e)
   }
 }
 
@@ -216,35 +203,26 @@ async function submitNewStep() {
 .roadmap-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .roadmap-pct { font-size: 12px; font-weight: 600; color: var(--accent); }
 
-.rm-steps-v { display: flex; flex-direction: column; }
-.rm-step-v { display: flex; gap: 12px; }
-.rm-dot-col { display: flex; flex-direction: column; align-items: center; width: 15px; flex-shrink: 0; }
-.rm-dot-v {
-  width: 15px; height: 15px; border-radius: 50%; background: var(--bg-card);
-  border: 3px solid var(--border); flex-shrink: 0; cursor: pointer;
+.rm-steps-v { display: flex; flex-direction: column; gap: 2px; }
+.rm-step-v { display: flex; align-items: center; gap: 10px; padding: 6px 0; position: relative; }
+.rm-check {
+  width: 18px; height: 18px; flex-shrink: 0; border-radius: 6px; padding: 0;
+  border: 1.5px solid var(--text-muted); background: var(--bg-card); color: #fff;
+  font-size: 11px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
-.rm-step-v.done .rm-dot-v { border-color: var(--accent); background: var(--accent); }
-.rm-step-v.current .rm-dot-v {
-  border-color: var(--accent); background: var(--bg-card);
-  box-shadow: 0 0 0 4px var(--accent-light);
-}
-.rm-connector { width: 3px; flex: 1; min-height: 22px; background: var(--border); margin-top: 2px; }
-.rm-step-v.done .rm-connector { background: var(--accent); }
-.rm-step-content { padding-bottom: 20px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; position: relative; }
-.rm-label-v { font-size: 12.5px; color: var(--text-muted); line-height: 1.3; cursor: pointer; }
-.rm-step-v.done .rm-label-v, .rm-step-v.current .rm-label-v { color: var(--text-primary); font-weight: 500; }
-.rm-you {
-  font-size: 9.5px; font-weight: 700; color: #fff; background: var(--accent);
-  padding: 1px 7px; border-radius: 980px; text-transform: uppercase; letter-spacing: .04em;
-  width: fit-content;
-}
+.rm-check.on { background: var(--accent); border-color: var(--accent); }
+.rm-check:disabled { cursor: default; opacity: .5; }
+.rm-label-v { flex: 1; font-size: 12.5px; color: var(--text-primary); line-height: 1.3; cursor: pointer; }
+.rm-step-v.done .rm-label-v { color: var(--text-muted); text-decoration: line-through; }
 .rm-step-input {
+  flex: 1; min-width: 0;
   font-size: 12.5px; padding: 4px 8px; border-radius: 7px; border: 1px solid var(--border);
   background: var(--bg-primary); color: var(--text-primary); outline: none; width: 100%; box-sizing: border-box;
 }
 .rm-step-input:focus { border-color: var(--accent); }
 .rm-step-del {
-  position: absolute; right: 0; top: -1px; background: none; border: none;
+  background: none; border: none;
   color: var(--text-muted); font-size: 15px; cursor: pointer; line-height: 1;
 }
 .rm-step-del:hover { color: var(--danger); }
